@@ -49,8 +49,8 @@ input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--bd);ba
 .item.done .chk{background:var(--ac);border-color:var(--ac)}
 .step{flex:none;display:flex;align-items:center;gap:2px}
 .sb{width:36px;height:36px;padding:0;font-size:20px;line-height:1;border-radius:10px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);font-weight:600}
-.qv{min-width:34px;text-align:center;font-weight:700;color:var(--ac);font-size:15px}
-.qv.dim{color:var(--mu);font-weight:400}
+.qv{min-width:46px;padding:0 2px;background:transparent;color:var(--ac);font-size:16px;font-weight:700;line-height:1.1;text-align:center}
+.qv small{display:block;font-size:11px;font-weight:500;color:var(--mu)}
 .ql{flex:none;color:var(--mu);font-size:14px;font-weight:600}
 .txt{flex:1;word-break:break-word;cursor:pointer}
 .item.done .txt{text-decoration:line-through;color:var(--mu)}
@@ -69,7 +69,7 @@ dialog button.wide{width:100%;margin-top:8px}
 .dbtns{display:flex;gap:8px;margin-top:14px}.dbtns button{flex:1}
 .lbl{font-size:13px;color:var(--mu);margin:12px 0 6px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.qrow{display:flex;gap:8px}.qrow button{flex:none;width:48px;padding:0;font-size:20px}.qrow input{text-align:center}
+.qrow{display:flex;gap:8px}.qrow button{flex:none;width:48px;padding:0;font-size:20px}.qrow input{text-align:center;font-size:18px;font-weight:700}
 .mrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}
 .mrow:last-child{border:0}
 .mrow .x{background:transparent;color:var(--mu);padding:4px 10px;font-weight:400}
@@ -122,12 +122,14 @@ dialog button.wide{width:100%;margin-top:8px}
   <input id="cdDa" autocomplete="off" spellcheck="false">
   <div class="lbl">English name (optional)</div>
   <input id="cdEn" autocomplete="off" spellcheck="false">
-  <div class="lbl">Quantity (optional)</div>
+  <div class="lbl">Amount</div>
   <div class="qrow">
     <button id="qMinus" class="sec" type="button" aria-label="Less">−</button>
-    <input id="cdQty" placeholder="1" autocomplete="off">
+    <input id="cdAmt" inputmode="decimal" placeholder="1" autocomplete="off">
     <button id="qPlus" class="sec" type="button" aria-label="More">+</button>
   </div>
+  <div id="cdUnits" class="chips"></div>
+  <div class="mu" style="margin-top:6px">Saving also sets this as the item's standard amount.</div>
   <div class="lbl">Category</div>
   <div id="cdCats" class="chips" style="margin:0"></div>
   <div class="lbl">…or create a new category</div>
@@ -187,7 +189,14 @@ const eqAny=(a,b)=>a.some(x=>b.includes(x));
 // ---------- built-in database ----------
 const seedCatMap={},seedCatOrder={},seedItems={};
 SEED_CATS.forEach(([id,da,en],i)=>{seedCatMap[id]={id,da,en};seedCatOrder[id]=i});
-Object.entries(SEED_ITEMS).forEach(([cat,s])=>s.split(';').forEach(p=>{const [da,en]=p.split('=');const id=keyOf(da);seedItems[id]={id,da,en:en||'',cat,n:0,at:0}}));
+const UNITS=['pcs','g','kg','ml','dl','l','pack','can','bottle','bunch'];
+const UNIT_ALIAS={x:'pcs',stk:'pcs',pcs:'pcs',pk:'pack',pak:'pack',pakke:'pack',pakker:'pack',pack:'pack',packs:'pack',dåse:'can',dåser:'can',can:'can',cans:'can',fl:'bottle',flaske:'bottle',flasker:'bottle',bottle:'bottle',bottles:'bottle',bdt:'bunch',bundt:'bunch',bunch:'bunch',liter:'l',g:'g',kg:'kg',ml:'ml',dl:'dl',l:'l'};
+const unitOf=s=>UNIT_ALIAS[(s||'').toLowerCase()]||null;
+const parseAmt=v=>{const n=parseFloat(String(v).replace(',','.'));return n>0?n:1};
+const fmt=n=>String(Math.round(n*100)/100).replace('.',',');
+const defMap={};SEED_DEF.split(';').forEach(p=>{const [n,v]=p.split('=');defMap[n]=v});
+const splitDef=v=>{const [a,u]=(v||'1 pcs').split(' ');return {amt:parseAmt(a),unit:u||'pcs'}};
+Object.entries(SEED_ITEMS).forEach(([cat,s])=>s.split(';').forEach(p=>{const [da,en]=p.split('=');const id=keyOf(da);seedItems[id]={id,da,en:en||'',cat,n:0,at:0,...splitDef(defMap[da]||SEED_CATDEF[cat])}}));
 
 // ---------- state ----------
 let listCode=load('cl_code',''),items=load('cl_items',[]),shared=load('cl_shared',{}),customCats=load('cl_cats',{}),db=null,unsubs=[],online=navigator.onLine,pend={},dlgState=null;
@@ -195,7 +204,7 @@ const hasCfg=()=>typeof firebase!=='undefined'&&typeof FIREBASE_CONFIG!=='undefi
 const col=n=>db.collection('lists').doc(listCode).collection(n);
 
 // the item database = built-in + whatever this list has added/used (shared entries win)
-const entries=()=>({...seedItems,...shared});
+const entries=()=>{const o={};for(const k of new Set([...Object.keys(seedItems),...Object.keys(shared)]))o[k]={...seedItems[k],...shared[k]};return o};
 const itemCid=i=>i.cid||keyOf(i.da||i.text||'');
 const itemDa=i=>i.da||i.text||'';
 const catInfo=id=>customCats[id]||seedCatMap[id]||{id,da:id||'Andet',en:id?'':'Other'};
@@ -243,28 +252,53 @@ function delShared(id){delete shared[id];save('cl_shared',shared);del('catalog',
 function upsertCat(c){customCats[c.id]=c;save('cl_cats',customCats);put('cats',c)}
 function delCat(id){delete customCats[id];save('cl_cats',customCats);del('cats',id)}
 
-function addToList({da,en,cat},qty){
-  const cid=keyOf(da);
+// standard amount+unit of a database entry, and the amount+unit of a list item (older items stored a text "qty")
+const entryDef=e=>({amt:typeof (e&&e.amt)==='number'?e.amt:1,unit:(e&&e.unit)||'pcs'});
+function itemQty(it){
+  if(typeof it.amt==='number')return {amt:it.amt,unit:it.unit||'pcs'};
+  const m=/^(\d+(?:[.,]\d+)?)\s*([^\d\s]*)$/.exec((it.qty||'').trim());
+  const d=entryDef(entries()[itemCid(it)]);
+  return m?{amt:parseAmt(m[1]),unit:unitOf(m[2])||d.unit}:d;
+}
+const withQty=(it,amt,unit)=>{const {qty,...r}=it;return {...r,amt,unit}};
+const STEP={pcs:1,pack:1,can:1,bottle:1,bunch:1,g:50,kg:.5,ml:50,dl:1,l:.5};
+function stepVal(a,u,dir){
+  let st=STEP[u]||1;if((u==='g'||u==='ml')&&a>=500)st=100;
+  const n=Math.round((a+dir*st)*100)/100;
+  return n<(STEP[u]||1)?a:n;
+}
+function stepQty(it,dir){
+  const {amt,unit}=itemQty(it),n=stepVal(amt,unit,dir);
+  if(n!==amt||typeof it.amt!=='number')putItem(withQty(it,n,unit));
+}
+// put an item on the to-buy list. typed = {amt,unit?} from "2 l mælk"; setDef = remember this amount/unit as the item's standard
+function addToList(e,typed,setDef){
+  const cid=keyOf(e.da);
   if(items.some(i=>!i.done&&itemCid(i)===cid))return;
+  const def=entryDef(e);
+  const amt=typed&&typed.amt!=null?typed.amt:def.amt,unit=typed&&typed.unit?typed.unit:def.unit;
   const prev=shared[cid];
-  upsertShared({id:cid,da,en:en||'',cat,n:(prev?prev.n:0)+1,at:Date.now()});
-  const base={cid,da,en:en||'',cat,qty:qty||'',done:false,ts:Date.now()};
+  upsertShared({id:cid,da:e.da,en:e.en||'',cat:e.cat,amt:setDef?amt:def.amt,unit:setDef?unit:def.unit,n:(prev?prev.n:0)+1,at:Date.now()});
   const inCart=items.find(i=>i.done&&itemCid(i)===cid);
-  putItem(inCart?{...inCart,...base}:{id:uid(),...base});
+  const base={cid,da:e.da,en:e.en||'',cat:e.cat,done:false,ts:Date.now()};
+  putItem(withQty(inCart?{...inCart,...base}:{id:uid(),...base},amt,unit));
 }
 
 // ---------- add flow ----------
-const QTY=/^(\d+(?:[.,]\d+)?\s*(?:x|stk|g|kg|dl|l|ml|pk|pak|pakker?|bdt)?)\s+(\S.*)$/i;
-function parseQty(t){const m=QTY.exec(t);return m?{qty:m[1].replace(/\s+/g,' ').trim(),rest:m[2].trim()}:{qty:'',rest:t.trim()}}
+const QTY=/^(\d+(?:[.,]\d+)?)\s*(x|stk|pcs|g|kg|ml|dl|l|liter|pk|pak|pakke|pakker|pack|packs|can|cans|dåse|dåser|fl|flaske|flasker|bottle|bottles|bdt|bunch|bundt)?\s+(\S.*)$/i;
+function parseQty(t){
+  const m=QTY.exec(t.trim());
+  return m?{typed:{amt:parseAmt(m[1]),unit:unitOf(m[2])},rest:m[3].trim()}:{typed:null,rest:t.trim()};
+}
 function findExact(t){
   const f=forms(t);
   return Object.values(entries()).find(e=>eqAny(forms(e.da),f)||(e.en&&eqAny(forms(e.en),f)));
 }
 function submitInput(){
-  const {qty,rest}=parseQty($('#newItem').value.trim());if(!rest)return;
+  const {typed,rest}=parseQty($('#newItem').value.trim());if(!rest)return;
   const e=findExact(rest);
   $('#newItem').value='';
-  if(e)addToList(e,qty);else openDlg({mode:'new',da:rest,qty});
+  if(e)addToList(e,typed,false);else openDlg({mode:'new',da:rest,amt:typed?typed.amt:1,unit:(typed&&typed.unit)||'pcs'});
   suggest();
 }
 const nameHtml=(da,en)=>`<b class="da">${esc(da)}</b>`+(en&&eqAny(forms(en),forms(da))===false?`<span class="en">${esc(en)}</span>`:'');
@@ -292,16 +326,19 @@ function suggest(){
 
 // ---------- item dialog (new + edit) ----------
 function openDlg(s){
-  dlgState={mode:s.mode,id:s.id||null,sel:s.cat||'',newCat:null};
-  $('#cdDa').value=s.da||'';$('#cdEn').value=s.en||'';$('#cdQty').value=s.qty||'';
+  dlgState={mode:s.mode,id:s.id||null,sel:s.cat||'',newCat:null,unit:s.unit||'pcs'};
+  $('#cdDa').value=s.da||'';$('#cdEn').value=s.en||'';$('#cdAmt').value=fmt(s.amt??1);
   $('#cdNewDa').value='';$('#cdNewEn').value='';$('#cdHint').textContent='';
   $('#cdTitle').textContent=s.mode==='new'?'New item':'Edit item';
   $('#cdDel').hidden=s.mode!=='edit';
-  drawCats();$('#catDlg').showModal();
+  drawCats();drawUnits();$('#catDlg').showModal();
 }
 function drawCats(){
   $('#cdCats').innerHTML=allCats().map(c=>`<button type="button" class="chip${c.id===dlgState.sel?' sel':''}" data-cc="${esc(c.id)}">${nameHtml(c.da,c.en)}</button>`).join('');
   $('#cdSave').disabled=!dlgState.sel||!($('#cdDa').value.trim()||$('#cdEn').value.trim());
+}
+function drawUnits(){
+  $('#cdUnits').innerHTML=UNITS.map(u=>`<button type="button" class="chip${u===dlgState.unit?' sel':''}" data-un="${u}">${u}</button>`).join('');
 }
 function updateNewCat(){
   const da=$('#cdNewDa').value.trim(),en=$('#cdNewEn').value.trim();
@@ -316,21 +353,20 @@ function updateNewCat(){
 }
 $('#cdNewDa').oninput=updateNewCat;$('#cdNewEn').oninput=updateNewCat;
 $('#cdDa').oninput=drawCats;$('#cdEn').oninput=drawCats;
-const numQ=v=>/^\d+$/.test(v);
-$('#qPlus').onclick=()=>{const v=$('#cdQty').value.trim();$('#cdQty').value=!v?'2':numQ(v)?String(+v+1):v};
-$('#qMinus').onclick=()=>{const v=$('#cdQty').value.trim();$('#cdQty').value=numQ(v)?(+v>2?String(+v-1):''):v};
+$('#qPlus').onclick=()=>{$('#cdAmt').value=fmt(stepVal(parseAmt($('#cdAmt').value),dlgState.unit,1))};
+$('#qMinus').onclick=()=>{$('#cdAmt').value=fmt(stepVal(parseAmt($('#cdAmt').value),dlgState.unit,-1))};
 $('#cdSave').onclick=()=>{
-  let da=$('#cdDa').value.trim(),en=$('#cdEn').value.trim();const qty=$('#cdQty').value.trim(),cat=dlgState.sel;
+  let da=$('#cdDa').value.trim(),en=$('#cdEn').value.trim();const amt=parseAmt($('#cdAmt').value),unit=dlgState.unit,cat=dlgState.sel;
   if(!da){da=en;en=''}
   if(!da||!cat)return;
   if(dlgState.newCat)upsertCat(dlgState.newCat);
-  if(dlgState.mode==='new')addToList({da,en,cat},qty);
+  if(dlgState.mode==='new')addToList({da,en,cat},{amt,unit},true);
   else{
     const it=items.find(x=>x.id===dlgState.id);
     if(it){
       const cid=keyOf(da),prev=shared[cid];
-      putItem({...it,cid,da,en,cat,qty});
-      upsertShared({id:cid,da,en,cat,n:prev?prev.n:1,at:Date.now()});
+      putItem(withQty({...it,cid,da,en,cat},amt,unit));
+      upsertShared({id:cid,da,en,cat,amt,unit,n:prev?prev.n:1,at:Date.now()});
     }
   }
   $('#catDlg').close();suggest();
@@ -339,29 +375,16 @@ $('#cdCancel').onclick=()=>$('#catDlg').close();
 $('#cdDel').onclick=()=>{removeItem(dlgState.id);$('#catDlg').close()};
 
 // ---------- list UI ----------
-const qtyLabel=q=>/^\d+([.,]\d+)?$/.test(q)?q+'×':q;
 function row(it){
-  const q=it.qty||'';
+  const {amt,unit}=itemQty(it);
   const ctl=it.done
-    ?(q?`<span class="ql">${esc(qtyLabel(q))}</span>`:'')
-    :`<div class="step"><button class="sb" data-qm="${it.id}" aria-label="Less">−</button><span class="qv${q?'':' dim'}">${esc(q||'1')}</span><button class="sb" data-qp="${it.id}" aria-label="More">+</button></div>`;
+    ?`<span class="ql">${fmt(amt)} ${esc(unit)}</span>`
+    :`<div class="step"><button class="sb" data-qm="${it.id}" aria-label="Less">−</button><button class="qv" data-e="${it.id}" aria-label="Edit amount"><b>${fmt(amt)}</b><small>${esc(unit)}</small></button><button class="sb" data-qp="${it.id}" aria-label="More">+</button></div>`;
   return `<div class="item ${it.done?'done':''}">
     <button class="chk" data-t="${it.id}" aria-label="Toggle">${it.done?'✓':''}</button>
     <div class="txt" data-e="${it.id}">${nameHtml(itemDa(it),it.en)}</div>
     ${ctl}
     <button class="x" data-d="${it.id}" aria-label="Delete">✕</button></div>`;
-}
-// one-tap quantity: whole numbers step by 1 (by 50 from 100 up); "1" is stored as empty
-function stepQty(it,dir){
-  const q=(it.qty||'').trim();
-  if(/^\d+[.,]\d/.test(q))return;
-  const m=/^(\d+)(.*)$/.exec(q);
-  if(!m&&q)return;
-  let n=m?+m[1]:1;const rest=m?m[2]:'';
-  n+=(dir>0?1:-1)*(n>=100?50:1);
-  if(n<1)return;
-  const out=n===1&&!rest.trim()?'':String(n)+rest;
-  if(out!==q)putItem({...it,qty:out});
 }
 function groups(list){
   const m={};list.forEach(i=>(m[i.cat||'andet']??=[]).push(i));
@@ -390,13 +413,14 @@ function drawMgr(){
 }
 
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-t],[data-d],[data-e],[data-c],[data-new],[data-cc],[data-md],[data-mc],[data-qm],[data-qp]');if(!t)return;
+  const t=e.target.closest('[data-t],[data-d],[data-e],[data-c],[data-new],[data-cc],[data-md],[data-mc],[data-qm],[data-qp],[data-un]');if(!t)return;
   const D=t.dataset;
   if(D.t){const it=items.find(x=>x.id===D.t);if(it)putItem({...it,done:!it.done,ts:Date.now()})}
   else if(D.qp||D.qm){const it=items.find(x=>x.id===(D.qp||D.qm));if(it)stepQty(it,D.qp?1:-1)}
   else if(D.d){removeItem(D.d)}
-  else if(D.e){const it=items.find(x=>x.id===D.e);if(it)openDlg({mode:'edit',id:it.id,da:itemDa(it),en:it.en||'',qty:it.qty||'',cat:it.cat||''})}
-  else if(D.c){const en=entries()[D.c];if(en){addToList(en,parseQty($('#newItem').value.trim()).qty);$('#newItem').value='';suggest()}}
+  else if(D.e){const it=items.find(x=>x.id===D.e);if(it){const q=itemQty(it);openDlg({mode:'edit',id:it.id,da:itemDa(it),en:it.en||'',amt:q.amt,unit:q.unit,cat:it.cat||''})}}
+  else if(D.un){dlgState.unit=D.un;drawUnits()}
+  else if(D.c){const en=entries()[D.c];if(en){addToList(en,parseQty($('#newItem').value.trim()).typed,false);$('#newItem').value='';suggest()}}
   else if(D.new!==undefined){submitInput()}
   else if(D.cc!==undefined){dlgState.sel=D.cc;dlgState.newCat=null;$('#cdNewDa').value='';$('#cdNewEn').value='';$('#cdHint').textContent='';drawCats()}
   else if(D.md){delShared(D.md);drawMgr();render()}

@@ -35,3 +35,29 @@ const SEED_ITEMS={
   baby:'Bleer=Diapers;Vådservietter=Wet wipes;Bleecreme=Diaper cream;Modermælkserstatning=Infant formula;Babymos=Baby puree;Babygrød=Baby porridge;Babyshampoo=Baby shampoo',
   dyr:'Hundefoder=Dog food;Kattefoder=Cat food;Kattegrus=Cat litter'
 };
+
+// Standard amount + unit for each item (edit per item on the list, or change the default by saving the item dialog).
+// Units: pcs, g, kg, ml, dl, l, pack, can, bottle, bunch. Items not listed use their category's default below.
+const SEED_CATDEF={frugt:'1 pcs',brod:'1 pcs',koed:'500 g',fisk:'300 g',paalaeg:'1 pack',mejeri:'1 pcs',kolonial:'1 pack',krydderier:'1 pcs',frost:'1 pack',drikke:'1 bottle',snacks:'1 pack',husholdning:'1 pack',pleje:'1 pcs',baby:'1 pack',dyr:'1 pack',andet:'1 pcs'};
+const SEED_DEF=[
+  // fruit & veg
+  'Æbler=1 kg','Bananer=1 bunch','Appelsiner=1 kg','Clementiner=1 kg','Citroner=2 pcs','Limefrugter=2 pcs','Grapefrugt=2 pcs','Pærer=1 kg','Druer=500 g','Jordbær=250 g','Blåbær=125 g','Hindbær=125 g','Mango=2 pcs','Avocado=2 pcs','Kiwi=4 pcs','Ferskner=4 pcs','Nektariner=4 pcs',
+  'Kartofler=1 kg','Søde kartofler=500 g','Løg=1 kg','Rødløg=3 pcs','Forårsløg=1 bunch','Gulerødder=1 kg','Tomater=500 g','Cherrytomater=250 g','Peberfrugt=2 pcs','Spinat=200 g','Grønkål=200 g','Champignon=250 g','Porrer=2 pcs','Rødbeder=500 g','Radiser=1 bunch','Majs=2 pcs','Asparges=1 bunch','Ingefær=100 g','Chili=2 pcs','Persille=1 bunch','Dild=1 bunch','Purløg=1 bunch','Rucola=100 g','Koriander=1 bunch','Mynte=1 bunch',
+  // bread
+  'Boller=6 pcs','Rundstykker=4 pcs','Croissanter=4 pcs','Wienerbrød=2 pcs','Tebirkes=2 pcs','Kanelsnegle=2 pcs','Skolebrød=2 pcs',
+  // meat & fish
+  'Hakkebøffer=1 pack','Kyllingebryst=1 pack','Kyllingelår=1 pack','Hel kylling=1 pcs','Kalkunbryst=1 pack','Bacon=1 pack','Pølser=1 pack','Frikadeller=1 pack','Flæskesteg=1 kg','Svinekoteletter=4 pcs','Oksefilet=400 g','Bøf=2 pcs','Spareribs=1 kg','Lammekølle=1 pcs',
+  'Røget laks=100 g','Rejer=200 g','Muslinger=1 kg','Sild=1 pack','Makrel=1 pcs','Tun på dåse=1 can','Fiskefilet=1 pack','Fiskefrikadeller=1 pack','Makrel i tomat=1 can','Spegepølse=1 pcs',
+  // dairy & eggs
+  'Mælk=1 l','Sødmælk=1 l','Letmælk=1 l','Skummetmælk=1 l','Kærnemælk=1 l','Havredrik=1 l','Mandeldrik=1 l','Sojadrik=1 l','Kakaomælk=0,5 l','Fløde=2 dl','Piskefløde=2 dl','Madlavningsfløde=2 dl','Smør=250 g','Margarine=500 g','Æg=10 pcs','Yoghurt=1 l','Græsk yoghurt=500 g','Ost=300 g','Revet ost=1 pack','Cheddar=200 g','Feta=1 pack','Havarti=300 g','Danbo=300 g',
+  // pantry
+  'Pasta=500 g','Spaghetti=500 g','Penne=500 g','Ris=1 kg','Basmatiris=1 kg','Couscous=500 g','Quinoa=500 g','Mel=1 kg','Sukker=1 kg','Flormelis=500 g','Havregryn=1 kg','Müsli=750 g','Linser=500 g','Kikærter=1 can','Kidneybønner=1 can','Hvide bønner=1 can','Hakkede tomater=1 can','Tomatpuré=1 can','Kokosmælk=1 can','Majs på dåse=1 can','Olivenolie=1 bottle','Rapsolie=1 bottle','Eddike=1 bottle','Nødder=200 g','Mandler=200 g','Rosiner=250 g',
+  // sauces
+  'Ketchup=1 bottle','Sojasovs=1 bottle','Chilisauce=1 bottle','Dressing=1 bottle',
+  // frozen & drinks
+  'Frostpizza=1 pcs','Is=1 l','Vand=1,5 l','Danskvand=6 bottle','Sodavand=1,5 l','Cola=1,5 l','Juice=1 l','Appelsinjuice=1 l','Æblejuice=1 l','Saft=1 bottle','Iste=1,5 l','Kaffe=500 g','Øl=6 bottle','Rødvin=1 bottle','Hvidvin=1 bottle','Energidrik=1 can',
+  // snacks & household & care
+  'Kage=1 pcs','Opvaskemiddel=1 bottle','Skyllemiddel=1 bottle','Universalrens=1 bottle','Bagepapir=1 pcs','Alufolie=1 pcs','Elpærer=1 pcs','Mundskyl=1 bottle','Shampoo=1 bottle','Balsam=1 bottle','Håndsæbe=1 bottle','Solcreme=1 bottle','Bodylotion=1 bottle',
+  // baby
+  'Babymos=4 pcs','Babyshampoo=1 bottle','Bleecreme=1 pcs'
+].join(';');
