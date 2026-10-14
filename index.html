@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cart Log">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Cart Log</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#111827;--mu:#6b7280;--ac:#059669;--bd:#e5e7eb;--dn:#dc2626}
+@media(prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--tx:#f1f5f9;--mu:#94a3b8;--ac:#34d399;--bd:#334155;--dn:#f87171}}
+*{box-sizing:border-box}
+body{margin:0 auto;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,sans-serif;max-width:520px;min-height:100vh;padding:max(12px,env(safe-area-inset-top)) 12px max(24px,env(safe-area-inset-bottom))}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:10px 0}
+header{display:flex;align-items:center;justify-content:space-between;margin:6px 0}
+h1{font-size:20px;margin:0}
+h2{font-size:13px;margin:16px 0 6px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center}
+button{font:inherit;border:0;border-radius:10px;padding:12px 14px;background:var(--ac);color:#0f172a;font-weight:600;cursor:pointer}
+button.ghost{background:transparent;color:var(--mu);font-weight:500;padding:6px 8px}
+button.lnk{background:transparent;color:var(--ac);padding:4px 0;font-size:14px}
+input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);width:100%}
+.add{display:flex;gap:8px}
+.add button{flex:none;width:52px;font-size:22px;padding:0}
+.mu{color:var(--mu);font-size:14px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mu);margin-right:5px}
+.dot.on{background:var(--ac)}.dot.wait{background:#f59e0b}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0}
+.chip{background:var(--card);border:1px solid var(--bd);color:var(--tx);font-weight:500;border-radius:99px;padding:6px 12px;font-size:14px}
+.list{background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--bd)}
+.item:last-child{border:0}
+.chk{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--mu);background:transparent;padding:0;display:grid;place-items:center;color:#0f172a;font-size:15px}
+.item.done .chk{background:var(--ac);border-color:var(--ac)}
+.txt{flex:1;word-break:break-word;cursor:text}
+.item.done .txt{text-decoration:line-through;color:var(--mu)}
+.item .x{flex:none;background:transparent;color:var(--mu);padding:4px 8px;font-weight:400}
+.item input.ed{padding:6px 8px}
+.empty{text-align:center;color:var(--mu);padding:28px 10px}
+.setup{margin-top:18vh;text-align:center}
+.setup h1{font-size:28px;margin-bottom:4px}
+.setup .card{text-align:left}
+.setup button{width:100%;margin-top:10px}
+.code{font:600 22px ui-monospace,monospace;letter-spacing:.12em;text-align:center;padding:10px;border:1px dashed var(--bd);border-radius:10px;margin:10px 0}
+.warn{color:var(--dn);font-size:14px;margin-top:8px}
+[hidden]{display:none!important}
+</style>
+</head><body>
+
+<!-- first launch: create or join -->
+<div id="setup" class="setup" hidden>
+  <div style="font-size:54px">🛒</div>
+  <h1>Cart Log</h1>
+  <div class="mu">One shared grocery list, synced live.</div>
+  <div class="card">
+    <button id="create">Create a new list</button>
+    <div class="mu" style="text-align:center;margin:14px 0 6px">or join an existing one</div>
+    <input id="joinCode" placeholder="List code" autocapitalize="characters" autocomplete="off" spellcheck="false">
+    <button id="join" style="background:var(--card);color:var(--tx);border:1px solid var(--bd)">Join</button>
+    <div id="cfgWarn" class="warn" hidden>Firebase isn't set up in firebase-config.js, so the list stays on this phone only.</div>
+  </div>
+</div>
+
+<!-- main -->
+<div id="main" hidden>
+  <header>
+    <h1>🛒 Cart Log</h1>
+    <div>
+      <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
+      <button class="ghost" id="menu" aria-label="List settings">⋯</button>
+    </div>
+  </header>
+
+  <form id="addForm" class="add" autocomplete="off">
+    <input id="newItem" placeholder="Add item…" enterkeyhint="done" autocapitalize="sentences">
+    <button type="submit" aria-label="Add">+</button>
+  </form>
+  <div id="chips" class="chips"></div>
+
+  <h2><span id="todoH">To buy</span></h2>
+  <div id="todo" class="list"></div>
+
+  <h2 id="doneHead" hidden><span id="doneH">In the cart</span><button class="lnk" id="clearDone">Clear all</button></h2>
+  <div id="done" class="list" hidden></div>
+</div>
+
+<dialog id="dlg" style="border:1px solid var(--bd);border-radius:14px;background:var(--card);color:var(--tx);width:min(92vw,400px);padding:16px">
+  <div style="font-weight:600">Share this list</div>
+  <div class="mu">Your partner opens the link, or enters this code on first launch.</div>
+  <div id="codeShow" class="code"></div>
+  <button id="shareBtn">Share link</button>
+  <button id="copyBtn" style="background:var(--card);color:var(--tx);border:1px solid var(--bd)">Copy link</button>
+  <button id="leaveBtn" class="ghost" style="width:100%;margin-top:14px;color:var(--dn)">Leave this list</button>
+  <button id="closeBtn" class="ghost" style="width:100%">Close</button>
+</dialog>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const load=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cleanCode=s=>(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const newCode=()=>{const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';const r=crypto.getRandomValues(new Uint8Array(8));r.forEach(n=>s+=a[n%a.length]);return s};
+
+let listCode=load('cl_code',''),items=load('cl_items',[]),hist=load('cl_hist',{}),db=null,unsubs=[],editing=null,online=navigator.onLine,pending=false;
+
+const hasCfg=()=>typeof firebase!=='undefined'&&typeof FIREBASE_CONFIG!=='undefined'&&FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey&&!/YOUR_/.test(FIREBASE_CONFIG.apiKey);
+const col=()=>db.collection('lists').doc(listCode).collection('items');
+
+// ---------- sync ----------
+function connect(){
+  unsubs.forEach(u=>u());unsubs=[];
+  if(!listCode||!hasCfg()){setSync();return}
+  if(!db){
+    firebase.initializeApp(FIREBASE_CONFIG);
+    try{firebase.firestore().enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch{}
+    db=firebase.firestore();
+  }
+  unsubs.push(col().onSnapshot({includeMetadataChanges:true},q=>{
+    items=q.docs.map(d=>d.data());
+    pending=q.metadata.hasPendingWrites;
+    save('cl_items',items);setSync();render();
+  },err=>{console.error(err);$('#sync').textContent='sync error';$('#dot').className='dot'}));
+}
+function setSync(){
+  if(!hasCfg()||!listCode){$('#sync').textContent='local only';$('#dot').className='dot';return}
+  $('#sync').textContent=!online?'offline':pending?'syncing…':'live';
+  $('#dot').className='dot '+(!online?'':pending?'wait':'on');
+}
+addEventListener('online',()=>{online=true;setSync()});
+addEventListener('offline',()=>{online=false;setSync()});
+
+// ---------- data ops (optimistic locally, Firestore handles the rest) ----------
+function putItem(it){
+  const i=items.findIndex(x=>x.id===it.id);
+  if(i<0)items.push(it);else items[i]=it;
+  save('cl_items',items);render();
+  if(db)col().doc(it.id).set(it).catch(console.error);
+}
+function removeItem(id){
+  items=items.filter(x=>x.id!==id);save('cl_items',items);render();
+  if(db)col().doc(id).delete().catch(console.error);
+}
+function addItem(text){
+  text=text.trim();if(!text)return;
+  const dup=items.find(i=>!i.done&&i.text.toLowerCase()===text.toLowerCase());
+  if(dup)return;
+  const key=text.toLowerCase();
+  hist[key]={t:text,n:((hist[key]&&hist[key].n)||0)+1,at:Date.now()};save('cl_hist',hist);
+  // re-adding something already in the cart just moves it back to "to buy"
+  const done=items.find(i=>i.done&&i.text.toLowerCase()===key);
+  if(done)return putItem({...done,done:false,ts:Date.now()});
+  putItem({id:uid(),text,done:false,ts:Date.now()});
+}
+
+// ---------- UI ----------
+function row(it){
+  if(editing===it.id)return `<div class="item"><input class="ed" data-ed="${it.id}" value="${esc(it.text)}"></div>`;
+  return `<div class="item ${it.done?'done':''}" data-id="${it.id}">
+    <button class="chk" data-t="${it.id}" aria-label="Toggle">${it.done?'✓':''}</button>
+    <div class="txt" data-e="${it.id}">${esc(it.text)}</div>
+    <button class="x" data-d="${it.id}" aria-label="Delete">✕</button></div>`;
+}
+function render(){
+  if(!listCode){$('#setup').hidden=false;$('#main').hidden=true;$('#cfgWarn').hidden=hasCfg();return}
+  $('#setup').hidden=true;$('#main').hidden=false;
+  const todo=items.filter(i=>!i.done).sort((a,b)=>a.ts-b.ts);
+  const done=items.filter(i=>i.done).sort((a,b)=>b.ts-a.ts);
+  $('#todo').innerHTML=todo.length?todo.map(row).join(''):'<div class="empty">Nothing to buy 🎉<br>Add something above.</div>';
+  $('#todoH').textContent='To buy'+(todo.length?` · ${todo.length}`:'');
+  $('#doneHead').hidden=$('#done').hidden=!done.length;
+  $('#done').innerHTML=done.map(row).join('');
+  $('#doneH').textContent=`In the cart · ${done.length}`;
+  chips();
+  const ed=document.querySelector('input.ed');if(ed&&document.activeElement!==ed){ed.focus();ed.setSelectionRange(ed.value.length,ed.value.length)}
+}
+function chips(){
+  const q=$('#newItem').value.trim().toLowerCase();
+  const onList=new Set(items.filter(i=>!i.done).map(i=>i.text.toLowerCase()));
+  let c=Object.values(hist).filter(h=>!onList.has(h.t.toLowerCase())&&(!q||h.t.toLowerCase().includes(q)));
+  c.sort((a,b)=>b.n-a.n||b.at-a.at);
+  $('#chips').innerHTML=c.slice(0,q?6:8).map(h=>`<button class="chip" data-c="${esc(h.t)}">${esc(h.t)}</button>`).join('');
+}
+function commitEdit(id,val){
+  editing=null;val=(val||'').trim();
+  const it=items.find(x=>x.id===id);
+  if(!it){render();return}
+  if(!val||val===it.text){render();return}
+  putItem({...it,text:val});
+}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-t],[data-d],[data-e],[data-c]');if(!t)return;
+  if(t.dataset.t){const it=items.find(x=>x.id===t.dataset.t);if(it)putItem({...it,done:!it.done,ts:Date.now()})}
+  else if(t.dataset.d){removeItem(t.dataset.d)}
+  else if(t.dataset.e){editing=t.dataset.e;render()}
+  else if(t.dataset.c){addItem(t.dataset.c)}
+});
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input.ed')){
+    if(e.key==='Enter'){e.preventDefault();commitEdit(e.target.dataset.ed,e.target.value)}
+    if(e.key==='Escape'){editing=null;render()}
+  }
+});
+document.addEventListener('focusout',e=>{
+  if(e.target.matches&&e.target.matches('input.ed')&&editing){commitEdit(e.target.dataset.ed,e.target.value)}
+});
+$('#addForm').onsubmit=e=>{e.preventDefault();addItem($('#newItem').value);$('#newItem').value='';chips();$('#newItem').focus()};
+$('#newItem').oninput=chips;
+$('#clearDone').onclick=()=>{const d=items.filter(i=>i.done);if(d.length&&confirm(`Remove ${d.length} item${d.length>1?'s':''} from the cart?`))d.forEach(i=>removeItem(i.id))};
+
+// ---------- list setup / sharing ----------
+const link=()=>location.origin+location.pathname+'?list='+listCode;
+function joinList(code){
+  code=cleanCode(code);if(code.length<4)return alert('Enter the list code');
+  listCode=code;save('cl_code',code);items=[];save('cl_items',[]);
+  history.replaceState(null,'',location.pathname);
+  connect();render();
+}
+$('#create').onclick=()=>joinList(newCode());
+$('#join').onclick=()=>joinList($('#joinCode').value);
+$('#joinCode').addEventListener('keydown',e=>{if(e.key==='Enter')joinList(e.target.value)});
+$('#menu').onclick=()=>{$('#codeShow').textContent=listCode;$('#shareBtn').hidden=!navigator.share;$('#dlg').showModal()};
+$('#closeBtn').onclick=()=>$('#dlg').close();
+$('#shareBtn').onclick=()=>navigator.share({title:'Cart Log',text:'Join my grocery list',url:link()}).catch(()=>{});
+$('#copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText(link());$('#copyBtn').textContent='Copied ✓'}catch{prompt('Copy this link',link())}setTimeout(()=>$('#copyBtn').textContent='Copy link',1500)};
+$('#leaveBtn').onclick=()=>{
+  if(!confirm('Leave this list on this phone? The list itself stays for whoever else has the code.'))return;
+  unsubs.forEach(u=>u());unsubs=[];listCode='';items=[];save('cl_code','');save('cl_items',[]);$('#dlg').close();render();
+};
+
+// ---------- boot ----------
+const q=new URLSearchParams(location.search).get('list');
+if(q&&cleanCode(q)!==listCode){listCode=cleanCode(q);save('cl_code',listCode);items=[];save('cl_items',[]);history.replaceState(null,'',location.pathname)}
+render();connect();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body></html>
