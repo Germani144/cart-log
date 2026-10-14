@@ -21,6 +21,8 @@ h2{font-size:13px;margin:16px 0 6px;color:var(--mu);font-weight:600;text-transfo
 button{font:inherit;border:0;border-radius:10px;padding:12px 14px;background:var(--ac);color:#0f172a;font-weight:600;cursor:pointer}
 button.ghost{background:transparent;color:var(--mu);font-weight:500;padding:6px 8px}
 button.lnk{background:transparent;color:var(--ac);padding:4px 0;font-size:14px}
+button.sec{background:var(--card);color:var(--tx);border:1px solid var(--bd)}
+button:disabled{opacity:.4}
 input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);width:100%}
 .add{display:flex;gap:8px}
 .add button{flex:none;width:52px;font-size:22px;padding:0}
@@ -29,15 +31,19 @@ input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--bd);ba
 .dot.on{background:var(--ac)}.dot.wait{background:#f59e0b}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0}
 .chip{background:var(--card);border:1px solid var(--bd);color:var(--tx);font-weight:500;border-radius:99px;padding:6px 12px;font-size:14px}
+.chip.sel{background:var(--ac);border-color:var(--ac);color:#0f172a}
+.sugg{margin:8px 0 0;background:var(--card);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.sg{display:flex;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid var(--bd);cursor:pointer}
+.sg:last-child{border:0}.sg.new{color:var(--ac);font-weight:600}
 .list{background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+.gh{padding:7px 14px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--mu);background:var(--bg);border-bottom:1px solid var(--bd)}
 .item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--bd)}
 .item:last-child{border:0}
 .chk{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--mu);background:transparent;padding:0;display:grid;place-items:center;color:#0f172a;font-size:15px}
 .item.done .chk{background:var(--ac);border-color:var(--ac)}
-.txt{flex:1;word-break:break-word;cursor:text}
+.txt{flex:1;word-break:break-word;cursor:pointer}
 .item.done .txt{text-decoration:line-through;color:var(--mu)}
 .item .x{flex:none;background:transparent;color:var(--mu);padding:4px 8px;font-weight:400}
-.item input.ed{padding:6px 8px}
 .empty{text-align:center;color:var(--mu);padding:28px 10px}
 .setup{margin-top:18vh;text-align:center}
 .setup h1{font-size:28px;margin-bottom:4px}
@@ -45,6 +51,14 @@ input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--bd);ba
 .setup button{width:100%;margin-top:10px}
 .code{font:600 22px ui-monospace,monospace;letter-spacing:.12em;text-align:center;padding:10px;border:1px dashed var(--bd);border-radius:10px;margin:10px 0}
 .warn{color:var(--dn);font-size:14px;margin-top:8px}
+dialog{border:1px solid var(--bd);border-radius:14px;background:var(--card);color:var(--tx);width:min(92vw,420px);max-height:86vh;padding:16px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog button.wide{width:100%;margin-top:8px}
+.dbtns{display:flex;gap:8px;margin-top:14px}.dbtns button{flex:1}
+.lbl{font-size:13px;color:var(--mu);margin:12px 0 6px}
+.mrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}
+.mrow:last-child{border:0}
+.mrow .x{background:transparent;color:var(--mu);padding:4px 10px;font-weight:400}
 [hidden]{display:none!important}
 </style>
 </head><body>
@@ -58,7 +72,7 @@ input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--bd);ba
     <button id="create">Create a new list</button>
     <div class="mu" style="text-align:center;margin:14px 0 6px">or join an existing one</div>
     <input id="joinCode" placeholder="List code" autocapitalize="characters" autocomplete="off" spellcheck="false">
-    <button id="join" style="background:var(--card);color:var(--tx);border:1px solid var(--bd)">Join</button>
+    <button id="join" class="sec">Join</button>
     <div id="cfgWarn" class="warn" hidden>Firebase isn't set up in firebase-config.js, so the list stays on this phone only.</div>
   </div>
 </div>
@@ -74,7 +88,7 @@ input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--bd);ba
   </header>
 
   <form id="addForm" class="add" autocomplete="off">
-    <input id="newItem" placeholder="Add item…" enterkeyhint="done" autocapitalize="sentences">
+    <input id="newItem" placeholder="Add item…" enterkeyhint="done" autocapitalize="sentences" autocomplete="off" spellcheck="false">
     <button type="submit" aria-label="Add">+</button>
   </form>
   <div id="chips" class="chips"></div>
@@ -86,14 +100,39 @@ input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--bd);ba
   <div id="done" class="list" hidden></div>
 </div>
 
-<dialog id="dlg" style="border:1px solid var(--bd);border-radius:14px;background:var(--card);color:var(--tx);width:min(92vw,400px);padding:16px">
+<!-- new item / edit item -->
+<dialog id="catDlg">
+  <div id="cdTitle" style="font-weight:600"></div>
+  <div class="lbl">Name</div>
+  <input id="cdName" autocomplete="off" spellcheck="false">
+  <div class="lbl">Category</div>
+  <div id="cdCats" class="chips" style="margin:0"></div>
+  <input id="cdNew" placeholder="…or create a new category" autocomplete="off" style="margin-top:10px">
+  <div class="dbtns">
+    <button id="cdCancel" class="sec" type="button">Cancel</button>
+    <button id="cdSave" type="button">Save</button>
+  </div>
+  <button id="cdDel" class="ghost wide" type="button" style="color:var(--dn)">Remove from list</button>
+</dialog>
+
+<!-- share / settings -->
+<dialog id="dlg">
   <div style="font-weight:600">Share this list</div>
   <div class="mu">Your partner opens the link, or enters this code on first launch.</div>
   <div id="codeShow" class="code"></div>
-  <button id="shareBtn">Share link</button>
-  <button id="copyBtn" style="background:var(--card);color:var(--tx);border:1px solid var(--bd)">Copy link</button>
-  <button id="leaveBtn" class="ghost" style="width:100%;margin-top:14px;color:var(--dn)">Leave this list</button>
-  <button id="closeBtn" class="ghost" style="width:100%">Close</button>
+  <button id="shareBtn" class="wide">Share link</button>
+  <button id="copyBtn" class="wide sec">Copy link</button>
+  <button id="mgrBtn" class="wide sec">Manage item database</button>
+  <button id="leaveBtn" class="ghost wide" style="margin-top:14px;color:var(--dn)">Leave this list</button>
+  <button id="closeBtn" class="ghost wide">Close</button>
+</dialog>
+
+<!-- item database manager -->
+<dialog id="mgrDlg">
+  <div style="font-weight:600">Item database</div>
+  <div class="mu">Everything you've added before. Remove typos here; tap an item on the list to change its category.</div>
+  <div id="mgrList" style="margin-top:8px;overflow:auto;max-height:50vh"></div>
+  <button id="mgrClose" class="wide sec">Close</button>
 </dialog>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -104,14 +143,16 @@ const $=s=>document.querySelector(s);
 const load=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}};
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cleanCode=s=>(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
-const newCode=()=>{const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';const r=crypto.getRandomValues(new Uint8Array(8));r.forEach(n=>s+=a[n%a.length]);return s};
+const newCode=()=>{const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';crypto.getRandomValues(new Uint8Array(8)).forEach(n=>s+=a[n%a.length]);return s};
+const keyOf=s=>s.trim().toLowerCase().replace(/[\/\s]+/g,'_');
+const OTHER='Other';
 
-let listCode=load('cl_code',''),items=load('cl_items',[]),hist=load('cl_hist',{}),db=null,unsubs=[],editing=null,online=navigator.onLine,pending=false;
+let listCode=load('cl_code',''),items=load('cl_items',[]),catalog=load('cl_catalog',{}),db=null,unsubs=[],online=navigator.onLine,pend={i:false,c:false},dlgState=null;
 
 const hasCfg=()=>typeof firebase!=='undefined'&&typeof FIREBASE_CONFIG!=='undefined'&&FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey&&!/YOUR_/.test(FIREBASE_CONFIG.apiKey);
-const col=()=>db.collection('lists').doc(listCode).collection('items');
+const col=n=>db.collection('lists').doc(listCode).collection(n);
 
 // ---------- sync ----------
 function connect(){
@@ -122,104 +163,166 @@ function connect(){
     try{firebase.firestore().enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch{}
     db=firebase.firestore();
   }
-  unsubs.push(col().onSnapshot({includeMetadataChanges:true},q=>{
-    items=q.docs.map(d=>d.data());
-    pending=q.metadata.hasPendingWrites;
+  const bad=err=>{console.error(err);$('#sync').textContent='sync error';$('#dot').className='dot'};
+  unsubs.push(col('items').onSnapshot({includeMetadataChanges:true},q=>{
+    items=q.docs.map(d=>d.data());pend.i=q.metadata.hasPendingWrites;
     save('cl_items',items);setSync();render();
-  },err=>{console.error(err);$('#sync').textContent='sync error';$('#dot').className='dot'}));
+  },bad));
+  unsubs.push(col('catalog').onSnapshot({includeMetadataChanges:true},q=>{
+    const c={};q.docs.forEach(d=>{const v=d.data();c[v.id||d.id]=v});
+    catalog=c;pend.c=q.metadata.hasPendingWrites;
+    save('cl_catalog',catalog);setSync();render();
+  },bad));
 }
 function setSync(){
   if(!hasCfg()||!listCode){$('#sync').textContent='local only';$('#dot').className='dot';return}
-  $('#sync').textContent=!online?'offline':pending?'syncing…':'live';
-  $('#dot').className='dot '+(!online?'':pending?'wait':'on');
+  const p=pend.i||pend.c;
+  $('#sync').textContent=!online?'offline':p?'syncing…':'live';
+  $('#dot').className='dot '+(!online?'':p?'wait':'on');
 }
 addEventListener('online',()=>{online=true;setSync()});
 addEventListener('offline',()=>{online=false;setSync()});
 
-// ---------- data ops (optimistic locally, Firestore handles the rest) ----------
+// ---------- data ops (optimistic locally; Firestore queues them when offline) ----------
 function putItem(it){
   const i=items.findIndex(x=>x.id===it.id);
   if(i<0)items.push(it);else items[i]=it;
   save('cl_items',items);render();
-  if(db)col().doc(it.id).set(it).catch(console.error);
+  if(db)col('items').doc(it.id).set(it).catch(console.error);
 }
 function removeItem(id){
   items=items.filter(x=>x.id!==id);save('cl_items',items);render();
-  if(db)col().doc(id).delete().catch(console.error);
+  if(db)col('items').doc(id).delete().catch(console.error);
 }
-function addItem(text){
-  text=text.trim();if(!text)return;
-  const dup=items.find(i=>!i.done&&i.text.toLowerCase()===text.toLowerCase());
-  if(dup)return;
-  const key=text.toLowerCase();
-  hist[key]={t:text,n:((hist[key]&&hist[key].n)||0)+1,at:Date.now()};save('cl_hist',hist);
-  // re-adding something already in the cart just moves it back to "to buy"
-  const done=items.find(i=>i.done&&i.text.toLowerCase()===key);
-  if(done)return putItem({...done,done:false,ts:Date.now()});
-  putItem({id:uid(),text,done:false,ts:Date.now()});
+function upsertCat(e){
+  catalog[e.id]=e;save('cl_catalog',catalog);
+  if(db)col('catalog').doc(e.id).set(e).catch(console.error);
+}
+function delCat(id){
+  delete catalog[id];save('cl_catalog',catalog);
+  if(db)col('catalog').doc(id).delete().catch(console.error);
+}
+// put an item on the to-buy list and remember it (with its category) in the shared database
+function addToList(name,cat){
+  const k=keyOf(name);
+  if(items.some(i=>!i.done&&keyOf(i.text)===k))return;
+  const prev=catalog[k];
+  upsertCat({id:k,name,cat,n:(prev?prev.n:0)+1,at:Date.now()});
+  const inCart=items.find(i=>i.done&&keyOf(i.text)===k);
+  if(inCart)putItem({...inCart,text:name,cat,done:false,ts:Date.now()});
+  else putItem({id:uid(),text:name,cat,done:false,ts:Date.now()});
+}
+const cats=()=>[...new Set([...Object.values(catalog).map(e=>e.cat),...items.map(i=>i.cat)].filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+
+// ---------- add flow ----------
+function submitInput(){
+  const t=$('#newItem').value.trim();if(!t)return;
+  const e=catalog[keyOf(t)];
+  $('#newItem').value='';
+  if(e)addToList(e.name,e.cat);
+  else openDlg({mode:'new',name:t});
+  suggest();
+}
+function suggest(){
+  const raw=$('#newItem').value.trim(),q=raw.toLowerCase(),box=$('#chips');
+  const onList=new Set(items.filter(i=>!i.done).map(i=>keyOf(i.text)));
+  let c=Object.values(catalog).filter(e=>!onList.has(e.id));
+  if(!q){
+    c.sort((a,b)=>b.n-a.n||b.at-a.at);
+    box.className='chips';
+    box.innerHTML=c.slice(0,8).map(e=>`<button class="chip" type="button" data-c="${esc(e.id)}">${esc(e.name)}</button>`).join('');
+    return;
+  }
+  const sw=e=>e.name.toLowerCase().startsWith(q)?1:0;
+  c=c.filter(e=>e.name.toLowerCase().includes(q)).sort((a,b)=>sw(b)-sw(a)||b.n-a.n);
+  box.className='sugg';
+  box.innerHTML=c.slice(0,6).map(e=>`<div class="sg" data-c="${esc(e.id)}"><span>${esc(e.name)}</span><span class="mu">${esc(e.cat)}</span></div>`).join('')
+    +(catalog[keyOf(raw)]?'':`<div class="sg new" data-new="1">＋ Add “${esc(raw)}” as a new item</div>`);
 }
 
-// ---------- UI ----------
+// ---------- new item / edit dialog ----------
+function openDlg(s){
+  dlgState={mode:s.mode,id:s.id||null,sel:s.cat||''};
+  $('#cdName').value=s.name;$('#cdNew').value='';
+  $('#cdTitle').textContent=s.mode==='new'?'New item: pick a category':'Edit item';
+  $('#cdDel').hidden=s.mode!=='edit';
+  drawCats();$('#catDlg').showModal();
+}
+function drawCats(){
+  $('#cdCats').innerHTML=cats().map(c=>`<button type="button" class="chip${c===dlgState.sel?' sel':''}" data-cc="${esc(c)}">${esc(c)}</button>`).join('')||'<span class="mu">No categories yet. Create the first one below.</span>';
+  $('#cdSave').disabled=!dlgState.sel;
+}
+$('#cdNew').oninput=()=>{
+  const v=$('#cdNew').value.trim();
+  dlgState.sel=cats().find(c=>c.toLowerCase()===v.toLowerCase())||v;
+  drawCats();
+};
+$('#cdSave').onclick=()=>{
+  const name=$('#cdName').value.trim(),cat=(dlgState.sel||'').trim();
+  if(!name||!cat)return;
+  if(dlgState.mode==='new')addToList(name,cat);
+  else{
+    const it=items.find(x=>x.id===dlgState.id);
+    if(it){
+      putItem({...it,text:name,cat});
+      const k=keyOf(name),prev=catalog[k];
+      upsertCat({id:k,name,cat,n:prev?prev.n:1,at:Date.now()});
+    }
+  }
+  $('#catDlg').close();suggest();
+};
+$('#cdCancel').onclick=()=>$('#catDlg').close();
+$('#cdDel').onclick=()=>{removeItem(dlgState.id);$('#catDlg').close()};
+
+// ---------- list UI ----------
 function row(it){
-  if(editing===it.id)return `<div class="item"><input class="ed" data-ed="${it.id}" value="${esc(it.text)}"></div>`;
-  return `<div class="item ${it.done?'done':''}" data-id="${it.id}">
+  return `<div class="item ${it.done?'done':''}">
     <button class="chk" data-t="${it.id}" aria-label="Toggle">${it.done?'✓':''}</button>
     <div class="txt" data-e="${it.id}">${esc(it.text)}</div>
     <button class="x" data-d="${it.id}" aria-label="Delete">✕</button></div>`;
 }
+function groups(list){
+  const m={};list.forEach(i=>(m[i.cat||OTHER]??=[]).push(i));
+  return Object.keys(m).sort((a,b)=>a===OTHER?1:b===OTHER?-1:a.localeCompare(b)).map(c=>[c,m[c].sort((a,b)=>a.ts-b.ts)]);
+}
 function render(){
   if(!listCode){$('#setup').hidden=false;$('#main').hidden=true;$('#cfgWarn').hidden=hasCfg();return}
   $('#setup').hidden=true;$('#main').hidden=false;
-  const todo=items.filter(i=>!i.done).sort((a,b)=>a.ts-b.ts);
-  const done=items.filter(i=>i.done).sort((a,b)=>b.ts-a.ts);
-  $('#todo').innerHTML=todo.length?todo.map(row).join(''):'<div class="empty">Nothing to buy 🎉<br>Add something above.</div>';
+  const todo=items.filter(i=>!i.done),done=items.filter(i=>i.done).sort((a,b)=>b.ts-a.ts);
+  $('#todo').innerHTML=todo.length
+    ?groups(todo).map(([c,l])=>`<div class="gh">${esc(c)} · ${l.length}</div>`+l.map(row).join('')).join('')
+    :'<div class="empty">Nothing to buy 🎉<br>Add something above.</div>';
   $('#todoH').textContent='To buy'+(todo.length?` · ${todo.length}`:'');
   $('#doneHead').hidden=$('#done').hidden=!done.length;
   $('#done').innerHTML=done.map(row).join('');
   $('#doneH').textContent=`In the cart · ${done.length}`;
-  chips();
-  const ed=document.querySelector('input.ed');if(ed&&document.activeElement!==ed){ed.focus();ed.setSelectionRange(ed.value.length,ed.value.length)}
+  suggest();
 }
-function chips(){
-  const q=$('#newItem').value.trim().toLowerCase();
-  const onList=new Set(items.filter(i=>!i.done).map(i=>i.text.toLowerCase()));
-  let c=Object.values(hist).filter(h=>!onList.has(h.t.toLowerCase())&&(!q||h.t.toLowerCase().includes(q)));
-  c.sort((a,b)=>b.n-a.n||b.at-a.at);
-  $('#chips').innerHTML=c.slice(0,q?6:8).map(h=>`<button class="chip" data-c="${esc(h.t)}">${esc(h.t)}</button>`).join('');
-}
-function commitEdit(id,val){
-  editing=null;val=(val||'').trim();
-  const it=items.find(x=>x.id===id);
-  if(!it){render();return}
-  if(!val||val===it.text){render();return}
-  putItem({...it,text:val});
+function drawMgr(){
+  const l=Object.values(catalog).sort((a,b)=>a.cat.localeCompare(b.cat)||a.name.localeCompare(b.name));
+  $('#mgrList').innerHTML=l.length?l.map(e=>`<div class="mrow"><div><div>${esc(e.name)}</div><div class="mu">${esc(e.cat)}</div></div><button class="x" data-md="${esc(e.id)}" aria-label="Remove">✕</button></div>`).join(''):'<div class="empty">Nothing here yet.</div>';
 }
 
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-t],[data-d],[data-e],[data-c]');if(!t)return;
-  if(t.dataset.t){const it=items.find(x=>x.id===t.dataset.t);if(it)putItem({...it,done:!it.done,ts:Date.now()})}
-  else if(t.dataset.d){removeItem(t.dataset.d)}
-  else if(t.dataset.e){editing=t.dataset.e;render()}
-  else if(t.dataset.c){addItem(t.dataset.c)}
+  const t=e.target.closest('[data-t],[data-d],[data-e],[data-c],[data-new],[data-cc],[data-md]');if(!t)return;
+  const D=t.dataset;
+  if(D.t){const it=items.find(x=>x.id===D.t);if(it)putItem({...it,done:!it.done,ts:Date.now()})}
+  else if(D.d){removeItem(D.d)}
+  else if(D.e){const it=items.find(x=>x.id===D.e);if(it)openDlg({mode:'edit',id:it.id,name:it.text,cat:it.cat||''})}
+  else if(D.c){const c=catalog[D.c];if(c){addToList(c.name,c.cat);$('#newItem').value='';suggest()}}
+  else if(D.new!==undefined){submitInput()}
+  else if(D.cc!==undefined){dlgState.sel=D.cc;$('#cdNew').value='';drawCats()}
+  else if(D.md){delCat(D.md);drawMgr();render()}
 });
-document.addEventListener('keydown',e=>{
-  if(e.target.matches('input.ed')){
-    if(e.key==='Enter'){e.preventDefault();commitEdit(e.target.dataset.ed,e.target.value)}
-    if(e.key==='Escape'){editing=null;render()}
-  }
-});
-document.addEventListener('focusout',e=>{
-  if(e.target.matches&&e.target.matches('input.ed')&&editing){commitEdit(e.target.dataset.ed,e.target.value)}
-});
-$('#addForm').onsubmit=e=>{e.preventDefault();addItem($('#newItem').value);$('#newItem').value='';chips();$('#newItem').focus()};
-$('#newItem').oninput=chips;
+$('#addForm').onsubmit=e=>{e.preventDefault();submitInput();$('#newItem').focus()};
+$('#newItem').oninput=suggest;
 $('#clearDone').onclick=()=>{const d=items.filter(i=>i.done);if(d.length&&confirm(`Remove ${d.length} item${d.length>1?'s':''} from the cart?`))d.forEach(i=>removeItem(i.id))};
 
 // ---------- list setup / sharing ----------
 const link=()=>location.origin+location.pathname+'?list='+listCode;
 function joinList(code){
   code=cleanCode(code);if(code.length<4)return alert('Enter the list code');
-  listCode=code;save('cl_code',code);items=[];save('cl_items',[]);
+  listCode=code;save('cl_code',code);items=[];catalog={};save('cl_items',[]);save('cl_catalog',{});
   history.replaceState(null,'',location.pathname);
   connect();render();
 }
@@ -228,16 +331,18 @@ $('#join').onclick=()=>joinList($('#joinCode').value);
 $('#joinCode').addEventListener('keydown',e=>{if(e.key==='Enter')joinList(e.target.value)});
 $('#menu').onclick=()=>{$('#codeShow').textContent=listCode;$('#shareBtn').hidden=!navigator.share;$('#dlg').showModal()};
 $('#closeBtn').onclick=()=>$('#dlg').close();
+$('#mgrBtn').onclick=()=>{$('#dlg').close();drawMgr();$('#mgrDlg').showModal()};
+$('#mgrClose').onclick=()=>$('#mgrDlg').close();
 $('#shareBtn').onclick=()=>navigator.share({title:'Cart Log',text:'Join my grocery list',url:link()}).catch(()=>{});
 $('#copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText(link());$('#copyBtn').textContent='Copied ✓'}catch{prompt('Copy this link',link())}setTimeout(()=>$('#copyBtn').textContent='Copy link',1500)};
 $('#leaveBtn').onclick=()=>{
   if(!confirm('Leave this list on this phone? The list itself stays for whoever else has the code.'))return;
-  unsubs.forEach(u=>u());unsubs=[];listCode='';items=[];save('cl_code','');save('cl_items',[]);$('#dlg').close();render();
+  unsubs.forEach(u=>u());unsubs=[];listCode='';items=[];catalog={};save('cl_code','');save('cl_items',[]);save('cl_catalog',{});$('#dlg').close();render();
 };
 
 // ---------- boot ----------
 const q=new URLSearchParams(location.search).get('list');
-if(q&&cleanCode(q)!==listCode){listCode=cleanCode(q);save('cl_code',listCode);items=[];save('cl_items',[]);history.replaceState(null,'',location.pathname)}
+if(q&&cleanCode(q)!==listCode){listCode=cleanCode(q);save('cl_code',listCode);items=[];catalog={};save('cl_items',[]);save('cl_catalog',{});history.replaceState(null,'',location.pathname)}
 render();connect();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
