@@ -43,15 +43,19 @@ input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--bd);ba
 .list{background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
 .gh{padding:7px 14px;font-size:13px;color:var(--mu);background:var(--bg);border-bottom:1px solid var(--bd)}
 .gh b{color:var(--tx);font-size:14px}.gh .en{font-size:12px}
-.item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--bd)}
+.item{display:flex;align-items:center;gap:10px;padding:8px 10px 8px 14px;border-bottom:1px solid var(--bd)}
 .item:last-child{border:0}
 .chk{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--mu);background:transparent;padding:0;display:grid;place-items:center;color:#0f172a;font-size:15px}
 .item.done .chk{background:var(--ac);border-color:var(--ac)}
-.qty{flex:none;background:transparent;color:var(--ac);border:1px solid var(--bd);border-radius:8px;padding:2px 8px;font-size:14px;font-weight:700}
+.step{flex:none;display:flex;align-items:center;gap:2px}
+.sb{width:36px;height:36px;padding:0;font-size:20px;line-height:1;border-radius:10px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);font-weight:600}
+.qv{min-width:34px;text-align:center;font-weight:700;color:var(--ac);font-size:15px}
+.qv.dim{color:var(--mu);font-weight:400}
+.ql{flex:none;color:var(--mu);font-size:14px;font-weight:600}
 .txt{flex:1;word-break:break-word;cursor:pointer}
 .item.done .txt{text-decoration:line-through;color:var(--mu)}
 .item.done .da{font-weight:500}
-.item .x{flex:none;background:transparent;color:var(--mu);padding:4px 8px;font-weight:400}
+.item .x{flex:none;background:transparent;color:var(--mu);width:36px;height:36px;padding:0;margin-left:20px;font-weight:400}
 .empty{text-align:center;color:var(--mu);padding:28px 10px}
 .setup{margin-top:18vh;text-align:center}
 .setup h1{font-size:28px;margin-bottom:4px}
@@ -337,11 +341,27 @@ $('#cdDel').onclick=()=>{removeItem(dlgState.id);$('#catDlg').close()};
 // ---------- list UI ----------
 const qtyLabel=q=>/^\d+([.,]\d+)?$/.test(q)?q+'×':q;
 function row(it){
+  const q=it.qty||'';
+  const ctl=it.done
+    ?(q?`<span class="ql">${esc(qtyLabel(q))}</span>`:'')
+    :`<div class="step"><button class="sb" data-qm="${it.id}" aria-label="Less">−</button><span class="qv${q?'':' dim'}">${esc(q||'1')}</span><button class="sb" data-qp="${it.id}" aria-label="More">+</button></div>`;
   return `<div class="item ${it.done?'done':''}">
     <button class="chk" data-t="${it.id}" aria-label="Toggle">${it.done?'✓':''}</button>
-    ${it.qty?`<button class="qty" data-q="${it.id}">${esc(qtyLabel(it.qty))}</button>`:''}
     <div class="txt" data-e="${it.id}">${nameHtml(itemDa(it),it.en)}</div>
+    ${ctl}
     <button class="x" data-d="${it.id}" aria-label="Delete">✕</button></div>`;
+}
+// one-tap quantity: whole numbers step by 1 (by 50 from 100 up); "1" is stored as empty
+function stepQty(it,dir){
+  const q=(it.qty||'').trim();
+  if(/^\d+[.,]\d/.test(q))return;
+  const m=/^(\d+)(.*)$/.exec(q);
+  if(!m&&q)return;
+  let n=m?+m[1]:1;const rest=m?m[2]:'';
+  n+=(dir>0?1:-1)*(n>=100?50:1);
+  if(n<1)return;
+  const out=n===1&&!rest.trim()?'':String(n)+rest;
+  if(out!==q)putItem({...it,qty:out});
 }
 function groups(list){
   const m={};list.forEach(i=>(m[i.cat||'andet']??=[]).push(i));
@@ -370,10 +390,10 @@ function drawMgr(){
 }
 
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-t],[data-d],[data-e],[data-c],[data-new],[data-cc],[data-md],[data-mc],[data-q]');if(!t)return;
+  const t=e.target.closest('[data-t],[data-d],[data-e],[data-c],[data-new],[data-cc],[data-md],[data-mc],[data-qm],[data-qp]');if(!t)return;
   const D=t.dataset;
   if(D.t){const it=items.find(x=>x.id===D.t);if(it)putItem({...it,done:!it.done,ts:Date.now()})}
-  else if(D.q){const it=items.find(x=>x.id===D.q);if(it&&numQ(it.qty))putItem({...it,qty:String(+it.qty+1)})}
+  else if(D.qp||D.qm){const it=items.find(x=>x.id===(D.qp||D.qm));if(it)stepQty(it,D.qp?1:-1)}
   else if(D.d){removeItem(D.d)}
   else if(D.e){const it=items.find(x=>x.id===D.e);if(it)openDlg({mode:'edit',id:it.id,da:itemDa(it),en:it.en||'',qty:it.qty||'',cat:it.cat||''})}
   else if(D.c){const en=entries()[D.c];if(en){addToList(en,parseQty($('#newItem').value.trim()).qty);$('#newItem').value='';suggest()}}
