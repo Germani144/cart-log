@@ -1,22 +1,22 @@
 // Built-in item database: Danish name = English name, grouped by category.
-// Categories are listed in a typical store-walk order. Your own additions live in Firestore, not here.
+// Categories are listed in a typical store-walk order; the 4th value is the category color. Your own additions live in Firestore, not here.
 const SEED_CATS=[
-  ['frugt','Frugt & grønt','Fruit & vegetables'],
-  ['brod','Brød & bagværk','Bread & bakery'],
-  ['koed','Kød','Meat'],
-  ['fisk','Fisk & skaldyr','Fish & seafood'],
-  ['paalaeg','Pålæg','Deli & cold cuts'],
-  ['mejeri','Mejeri & æg','Dairy & eggs'],
-  ['kolonial','Kolonial','Pantry'],
-  ['krydderier','Krydderier & saucer','Spices & sauces'],
-  ['frost','Frost','Frozen'],
-  ['drikke','Drikkevarer','Drinks'],
-  ['snacks','Snacks & slik','Snacks & sweets'],
-  ['husholdning','Husholdning','Household'],
-  ['pleje','Personlig pleje','Personal care'],
-  ['baby','Baby','Baby'],
-  ['dyr','Kæledyr','Pets'],
-  ['andet','Andet','Other']
+  ['frugt','Frugt & grønt','Fruit & vegetables','#2F855A'],
+  ['brod','Brød & bagværk','Bread & bakery','#A16207'],
+  ['koed','Kød','Meat','#B83232'],
+  ['fisk','Fisk & skaldyr','Fish & seafood','#2B6CB0'],
+  ['paalaeg','Pålæg','Deli & cold cuts','#B83280'],
+  ['mejeri','Mejeri & æg','Dairy & eggs','#E6C65C'],
+  ['kolonial','Kolonial','Pantry','#C05621'],
+  ['krydderier','Krydderier & saucer','Spices & sauces','#6B46C1'],
+  ['frost','Frost','Frozen','#A8D8F0'],
+  ['drikke','Drikkevarer','Drinks','#4C51BF'],
+  ['snacks','Snacks & slik','Snacks & sweets','#657A0F'],
+  ['husholdning','Husholdning','Household','#4A5568'],
+  ['pleje','Personlig pleje','Personal care','#0F766E'],
+  ['baby','Baby','Baby','#D9C7F5'],
+  ['dyr','Kæledyr','Pets','#7B5B3A'],
+  ['andet','Andet','Other','#5F6B7A']
 ];
 const SEED_ITEMS={
   frugt:'Æbler=Apples;Bananer=Bananas;Appelsiner=Oranges;Clementiner=Clementines;Citroner=Lemons;Limefrugter=Limes;Grapefrugt=Grapefruit;Pærer=Pears;Druer=Grapes;Jordbær=Strawberries;Blåbær=Blueberries;Hindbær=Raspberries;Vandmelon=Watermelon;Melon=Melon;Ananas=Pineapple;Mango=Mango;Avocado=Avocado;Kiwi=Kiwi;Ferskner=Peaches;Nektariner=Nectarines;Kartofler=Potatoes;Søde kartofler=Sweet potatoes;Løg=Onions;Rødløg=Red onions;Hvidløg=Garlic;Forårsløg=Spring onions;Gulerødder=Carrots;Tomater=Tomatoes;Cherrytomater=Cherry tomatoes;Agurk=Cucumber;Peberfrugt=Bell pepper;Salat=Lettuce;Icebergsalat=Iceberg lettuce;Spinat=Spinach;Broccoli=Broccoli;Blomkål=Cauliflower;Hvidkål=White cabbage;Rødkål=Red cabbage;Grønkål=Kale;Squash=Zucchini;Aubergine=Eggplant;Champignon=Mushrooms;Porrer=Leeks;Selleri=Celery;Rødbeder=Beetroot;Radiser=Radishes;Fennikel=Fennel;Majs=Corn on the cob;Græskar=Pumpkin;Asparges=Asparagus;Ingefær=Ginger;Chili=Chili;Persille=Parsley;Dild=Dill;Basilikum=Basil;Purløg=Chives;Rucola=Arugula;Koriander=Coriander;Mynte=Mint',
