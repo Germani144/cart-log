@@ -10,8 +10,8 @@
 <link rel="icon" href="icon-192.png">
 <title>Cart Log</title>
 <style>
-:root{--bg:#f6f7fb;--card:#fff;--tx:#111827;--mu:#6b7280;--ac:#059669;--bd:#e5e7eb;--dn:#dc2626}
-@media(prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--tx:#f1f5f9;--mu:#94a3b8;--ac:#34d399;--bd:#334155;--dn:#f87171}}
+:root{--bg:#f6f7fb;--card:#fff;--tx:#111827;--mu:#6b7280;--ac:#059669;--bd:#e5e7eb;--dn:#dc2626;--td:#4C51BF;--tdt:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--tx:#f1f5f9;--mu:#94a3b8;--ac:#34d399;--bd:#334155;--dn:#f87171;--td:#818CF8;--tdt:#0f172a}}
 *{box-sizing:border-box}
 body{margin:0 auto;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,sans-serif;max-width:520px;min-height:100vh;padding:max(12px,env(safe-area-inset-top)) 12px max(24px,env(safe-area-inset-bottom))}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:10px 0}
@@ -79,6 +79,27 @@ dialog button.wide{width:100%;margin-top:8px}
 .swb.sel{box-shadow:0 0 0 2px var(--tx)}
 .sw input[type=color]{width:30px;height:30px;padding:0;border:0;border-radius:50%;background:none}
 .mh{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mu);margin:14px 0 2px}
+.tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:4px;margin:8px 0 6px}
+.tab{flex:1;background:transparent;color:var(--mu);font-weight:600;padding:10px 8px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:7px}
+.tab.on{background:var(--ac);color:#0f172a}
+.cnt{font-size:12px;font-weight:700;background:rgba(127,127,127,.22);border-radius:99px;padding:1px 7px;min-width:20px;text-align:center}
+.tab.on .cnt{background:rgba(15,23,42,.18)}
+.cnt:empty{display:none}
+.tdl .gh{display:flex;align-items:baseline;gap:8px}
+.tdl .gh .hint{margin-left:auto;font-size:11px;color:color-mix(in srgb,var(--t) 75%,var(--c))}
+.tdl .gh .lnk{margin-left:auto;color:inherit;text-decoration:underline;padding:0 2px;font-size:13px}
+.td{position:relative;display:flex;align-items:center;gap:10px;padding:8px 6px 8px 12px;background:color-mix(in srgb,var(--td) 9%,transparent);border-bottom:1px solid color-mix(in srgb,var(--td) 22%,transparent);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.td:last-child{border-bottom:0}
+.tchk{flex:none;width:26px;height:26px;padding:0;border-radius:50%;border:2px solid var(--td);background:transparent;color:var(--tdt);font-size:15px;display:grid;place-items:center}
+.rn{flex:none;width:var(--rw,2em);text-align:right;font:italic 600 15px/1 Georgia,'Times New Roman',serif;color:var(--td)}
+.tdt{flex:1;min-width:0;word-break:break-word;cursor:pointer;padding:5px 0}
+.td .x{flex:none;background:transparent;color:var(--mu);width:36px;height:36px;padding:0;margin-left:14px;font-weight:400}
+.td.done{opacity:.5}
+.td.done .tdt{text-decoration:line-through;cursor:default}
+.td.done .tchk{background:var(--td)}
+.td.lift{z-index:5;background:var(--card);box-shadow:inset 0 0 0 2px var(--td)}
+body.dragging{cursor:grabbing}
+.tded{flex:1;min-width:0;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--td);background:var(--card);color:var(--tx);resize:none;overflow:hidden;user-select:text;-webkit-user-select:text}
 [hidden]{display:none!important}
 </style>
 </head><body>
@@ -106,7 +127,12 @@ dialog button.wide{width:100%;margin-top:8px}
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
     </div>
   </header>
+  <nav class="tabs" role="tablist">
+    <button class="tab on" data-tab="g" role="tab" aria-selected="true">🛒 Groceries <span class="cnt" id="cntG"></span></button>
+    <button class="tab" data-tab="t" role="tab" aria-selected="false">📝 To-dos <span class="cnt" id="cntT"></span></button>
+  </nav>
 
+<div id="paneG">
   <form id="addForm" class="add" autocomplete="off">
     <input id="newItem" placeholder="Add item… (Danish or English, e.g. 2 mælk)" enterkeyhint="done" autocapitalize="sentences" autocomplete="off" spellcheck="false">
   </form>
@@ -117,6 +143,22 @@ dialog button.wide{width:100%;margin-top:8px}
 
   <h2 id="doneHead" hidden><span id="doneH">In the cart</span><button class="lnk" id="clearDone">Clear all</button></h2>
   <div id="done" class="list" hidden></div>
+</div>
+
+<div id="paneT" hidden>
+  <form id="tdForm" class="add" autocomplete="off">
+    <input id="tdNew" placeholder="Add a to-do…" enterkeyhint="done" autocapitalize="sentences" autocomplete="off">
+  </form>
+  <div id="tdHint" class="mu" style="margin-top:6px"></div>
+  <div class="list tdl" style="--c:var(--td);--t:var(--tdt);margin-top:12px">
+    <div class="gh"><b>To do</b><span class="en" id="tdN"></span><span class="hint" id="tdTip"></span></div>
+    <div id="tdOpen" style="position:relative"></div>
+  </div>
+  <div id="tdDoneCard" class="list tdl" style="--c:#5F6B7A;--t:#fff;margin-top:12px" hidden>
+    <div class="gh"><b>Done</b><span class="en" id="tdDoneN"></span><button class="lnk" id="tdClear" type="button">Clear all</button></div>
+    <div id="tdDone"></div>
+  </div>
+</div>
 </div>
 
 <!-- new item / edit item -->
@@ -208,7 +250,7 @@ const splitDef=v=>{const [a,u]=(v||'1 pcs').split(' ');return {amt:parseAmt(a),u
 Object.entries(SEED_ITEMS).forEach(([cat,s])=>s.split(';').forEach(p=>{const [da,en]=p.split('=');const id=keyOf(da);seedItems[id]={id,da,en:en||'',cat,n:0,at:0,...splitDef(defMap[da]||SEED_CATDEF[cat])}}));
 
 // ---------- state ----------
-let listCode=load('cl_code',''),items=load('cl_items',[]),shared=load('cl_shared',{}),customCats=load('cl_cats',{}),db=null,unsubs=[],online=navigator.onLine,pend={},dlgState=null;
+let listCode=load('cl_code',''),items=load('cl_items',[]),todos=load('cl_todos',[]),shared=load('cl_shared',{}),customCats=load('cl_cats',{}),db=null,unsubs=[],online=navigator.onLine,pend={},dlgState=null;
 const hasCfg=()=>typeof firebase!=='undefined'&&typeof FIREBASE_CONFIG!=='undefined'&&FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey&&!/YOUR_/.test(FIREBASE_CONFIG.apiKey);
 const col=n=>db.collection('lists').doc(listCode).collection(n);
 
@@ -242,6 +284,7 @@ function connect(){
     apply(q.docs.map(d=>d.data()));setSync();render();
   },bad));
   watch('items',l=>{items=l;save('cl_items',items)});
+  watch('todos',l=>{todos=l;save('cl_todos',todos)});
   watch('catalog',l=>{shared={};l.forEach(v=>{shared[v.id]=v.da?v:{...v,da:v.name||v.id,en:''}});save('cl_shared',shared)});
   watch('cats',l=>{customCats={};l.forEach(v=>customCats[v.id]=v);save('cl_cats',customCats)});
 }
@@ -438,6 +481,8 @@ function render(){
   $('#done').innerHTML=done.map(row).join('');
   $('#doneH').textContent=`In the cart · ${done.length}`;
   suggest();
+  $('#cntG').textContent=todo.length||'';
+  renderTodos();
 }
 function drawMgr(){
   const s=Object.values(shared).sort((a,b)=>catRank(a.cat)-catRank(b.cat)||a.da.localeCompare(b.da,'da'));
@@ -448,7 +493,7 @@ function drawMgr(){
 }
 
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-t],[data-d],[data-e],[data-c],[data-new],[data-cc],[data-md],[data-mc],[data-qm],[data-qp],[data-un],[data-sw]');if(!t)return;
+  const t=e.target.closest('[data-t],[data-d],[data-e],[data-c],[data-new],[data-cc],[data-md],[data-mc],[data-qm],[data-qp],[data-un],[data-sw],[data-xt],[data-xd],[data-xe]');if(!t)return;
   const D=t.dataset;
   if(D.t){const it=items.find(x=>x.id===D.t);if(it)putItem({...it,done:!it.done,ts:Date.now()})}
   else if(D.qp||D.qm){const it=items.find(x=>x.id===(D.qp||D.qm));if(it)stepQty(it,D.qp?1:-1)}
@@ -459,6 +504,9 @@ document.addEventListener('click',e=>{
   else if(D.new!==undefined){submitInput()}
   else if(D.cc!==undefined){dlgState.sel=D.cc;dlgState.newCat=null;dlgState.colorTouched=false;dlgState.catColor=customCats[D.cc]?safeColor(customCats[D.cc].color):null;$('#cdNewDa').value='';$('#cdNewEn').value='';$('#cdHint').textContent='';drawCats()}
   else if(D.sw){dlgState.catColor=D.sw;dlgState.colorTouched=true;drawColors()}
+  else if(D.xt){if(Date.now()<suppressClickUntil)return;const t=todoById(D.xt);if(t)putTodo({...t,done:!t.done,ts:Date.now()})}
+  else if(D.xd){if(Date.now()<suppressClickUntil)return;removeTodo(D.xd)}
+  else if(D.xe){if(Date.now()<suppressClickUntil)return;tdEdit(D.xe)}
   else if(D.md){delShared(D.md);drawMgr();render()}
   else if(D.mc){delCat(D.mc);drawMgr();render()}
 });
@@ -466,9 +514,138 @@ $('#addForm').onsubmit=e=>{e.preventDefault();submitInput();$('#newItem').focus(
 $('#newItem').oninput=suggest;
 $('#clearDone').onclick=()=>{const d=items.filter(i=>i.done);if(d.length&&confirm(`Remove ${d.length} item${d.length>1?'s':''} from the cart?`))d.forEach(i=>removeItem(i.id))};
 
+// ---------- tabs ----------
+let tab=load('cl_tab','g');
+function setTab(t){
+  tab=t==='t'?'t':'g';save('cl_tab',tab);
+  $('#paneG').hidden=tab!=='g';$('#paneT').hidden=tab!=='t';
+  document.querySelectorAll('.tab').forEach(b=>{const on=b.dataset.tab===tab;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+
+// ---------- to-dos: one shared ordered list; numbered i., ii., … by position; ticked ones sink to "Done" ----------
+const TODO_MAX=50;
+const roman=n=>{let s='';for(const [v,r] of [[1000,'m'],[900,'cm'],[500,'d'],[400,'cd'],[100,'c'],[90,'xc'],[50,'l'],[40,'xl'],[10,'x'],[9,'ix'],[5,'v'],[4,'iv'],[1,'i']])while(n>=v){s+=r;n-=v}return s};
+const todoById=id=>todos.find(t=>t.id===id);
+const todoOpen=()=>todos.filter(t=>!t.done).sort((a,b)=>(a.order||0)-(b.order||0)||(a.ts||0)-(b.ts||0)||(a.id<b.id?-1:1));
+let tdEditing=null,tdDirty=false,drag=null,hold=null,suppressClickUntil=0;
+function putTodo(t){const i=todos.findIndex(x=>x.id===t.id);if(i<0)todos.push(t);else todos[i]=t;save('cl_todos',todos);renderTodos();put('todos',t)}
+function removeTodo(id){todos=todos.filter(x=>x.id!==id);save('cl_todos',todos);renderTodos();del('todos',id)}
+function addTodo(text){
+  text=text.trim();if(!text||todoOpen().length>=TODO_MAX)return false;
+  putTodo({id:uid(),text,done:false,order:todos.reduce((m,t)=>Math.max(m,t.order||0),0)+1000,ts:Date.now()});
+  return true;
+}
+function renderTodos(){
+  if(!listCode)return;
+  if(drag||tdEditing){tdDirty=true;return}   // never rebuild the DOM under a finger or a cursor
+  tdDirty=false;
+  const open=todoOpen(),done=todos.filter(t=>t.done).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const w=Math.max(1,...open.map((_,i)=>roman(i+1).length));
+  $('#tdOpen').style.setProperty('--rw',(w*.55+.6)+'em');
+  $('#tdOpen').innerHTML=open.length?open.map((t,i)=>`<div class="td" data-id="${esc(t.id)}"><button class="tchk" data-xt="${esc(t.id)}" aria-label="Done"></button><span class="rn">${roman(i+1)}.</span><div class="tdt" data-xe="${esc(t.id)}">${esc(t.text)}</div><button class="x" data-xd="${esc(t.id)}" aria-label="Delete">✕</button></div>`).join(''):'<div class="empty">Nothing to do 🎉<br>Add a to-do above.</div>';
+  $('#tdN').textContent=open.length?` · ${open.length}`:'';
+  $('#tdTip').textContent=open.length>1?'hold & drag to reorder':'';
+  $('#tdDoneCard').hidden=!done.length;
+  $('#tdDoneN').textContent=` · ${done.length}`;
+  $('#tdDone').innerHTML=done.map(t=>`<div class="td done" data-id="${esc(t.id)}"><button class="tchk" data-xt="${esc(t.id)}" aria-label="Undo">✓</button><div class="tdt">${esc(t.text)}</div><button class="x" data-xd="${esc(t.id)}" aria-label="Delete">✕</button></div>`).join('');
+  const full=open.length>=TODO_MAX;
+  $('#tdNew').disabled=full;$('#tdNew').placeholder=full?'List is full (50). Tick or delete one first':'Add a to-do…';
+  $('#tdHint').textContent=open.length>=40?`${open.length} of ${TODO_MAX}`:'';
+  $('#cntT').textContent=open.length||'';
+}
+$('#tdForm').onsubmit=e=>{e.preventDefault();const i=$('#tdNew');if(addTodo(i.value))i.value='';i.focus()};
+$('#tdClear').onclick=()=>{const d=todos.filter(t=>t.done);if(d.length&&confirm(`Remove ${d.length} done to-do${d.length>1?'s':''}?`))d.forEach(t=>removeTodo(t.id))};
+
+// tap the text to edit it in place
+function tdEdit(id){
+  const t=todoById(id),box=document.querySelector(`#tdOpen .td[data-id="${id}"] .tdt`);if(!t||!box||tdEditing)return;
+  tdEditing=id;
+  const ta=document.createElement('textarea');ta.className='tded';ta.rows=1;ta.value=t.text;ta.enterKeyHint='done';
+  box.replaceWith(ta);
+  const fit=()=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px'};
+  ta.oninput=fit;fit();ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
+  let fin=false;
+  const finish=save=>{if(fin)return;fin=true;tdEditing=null;const v=ta.value.trim();if(save&&v&&v!==t.text)putTodo({...t,text:v});else renderTodos()};
+  ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();finish(true)}else if(e.key==='Escape'){finish(false)}};
+  ta.onblur=()=>finish(true);
+}
+
+// hold a row, then drag it. Only a stationary press starts a drag, so normal swipes still scroll the page.
+const lst=$('#tdOpen');
+function tdPress(el,x,y,touch){
+  tdPressCancel();
+  const h={el,x,y,ly:y,touch};
+  h.timer=setTimeout(()=>{if(hold===h){hold=null;tdBegin(h.el,h.ly)}},touch?330:220);
+  hold=h;
+}
+function tdPressCancel(){if(hold){clearTimeout(hold.timer);hold=null}}
+function tdBegin(el,y){
+  if(tdEditing||!el.isConnected)return;
+  drag={el,id:el.dataset.id,startY:y+scrollY,cy:y,raf:0};
+  el.classList.add('lift');document.body.classList.add('dragging');
+  try{navigator.vibrate&&navigator.vibrate(12)}catch{}
+  drag.raf=requestAnimationFrame(tdAuto);
+}
+function tdFlip(n,mut){
+  const a=n.offsetTop;mut();const b=n.offsetTop;if(a===b)return;
+  n.style.transition='none';n.style.transform=`translateY(${a-b}px)`;void n.offsetHeight;
+  n.style.transition='transform .16s ease';n.style.transform='';
+}
+function tdApply(){
+  const d=drag;if(!d)return;const el=d.el;
+  for(let g=0;g<60;g++){
+    const c=el.offsetTop+el.offsetHeight/2+(d.cy+scrollY-d.startY);
+    const nx=el.nextElementSibling,pv=el.previousElementSibling;
+    if(nx&&c>nx.offsetTop+nx.offsetHeight/2){tdFlip(nx,()=>lst.insertBefore(nx,el));d.startY+=nx.offsetHeight;continue}
+    if(pv&&c<pv.offsetTop+pv.offsetHeight/2){tdFlip(pv,()=>lst.insertBefore(pv,el.nextSibling));d.startY-=pv.offsetHeight;continue}
+    break;
+  }
+  el.style.transform=`translateY(${d.cy+scrollY-d.startY}px)`;
+}
+function tdMove(y){if(drag){drag.cy=y;tdApply()}}
+function tdAuto(){   // scroll the page while the finger is near the top or bottom edge
+  if(!drag)return;
+  const y=drag.cy,h=innerHeight,edge=90;let v=0;
+  if(y<edge)v=-Math.ceil((edge-y)/edge*16);else if(y>h-edge)v=Math.ceil((y-(h-edge))/edge*16);
+  if(v){const b=scrollY;scrollBy(0,v);if(scrollY!==b)tdApply()}
+  drag.raf=requestAnimationFrame(tdAuto);
+}
+function tdEnd(){
+  const d=drag;if(!d)return;drag=null;cancelAnimationFrame(d.raf);
+  suppressClickUntil=Date.now()+200;
+  d.el.classList.remove('lift');document.body.classList.remove('dragging');d.el.style.transform='';
+  tdCommit(d.id,[...lst.children].map(r=>r.dataset.id));
+}
+// only the moved row gets a new order value (halfway between its new neighbours), so two phones editing at once don't clash
+function tdCommit(id,ids){
+  const i=ids.indexOf(id),t=todoById(id);if(i<0||!t)return renderTodos();
+  const p=i>0?todoById(ids[i-1]):null,n=i<ids.length-1?todoById(ids[i+1]):null;
+  const a=p?p.order:null,b=n?n.order:null;
+  if((a==null||a<t.order)&&(b==null||t.order<b))return renderTodos();
+  if(a!=null&&b!=null&&Math.abs(b-a)<1e-6){ids.forEach((x,k)=>{const q=todoById(x);if(q&&q.order!==(k+1)*1000)putTodo({...q,order:(k+1)*1000})});return}
+  putTodo({...t,order:a==null&&b==null?1000:a==null?b-1000:b==null?a+1000:(a+b)/2});
+}
+lst.addEventListener('touchstart',e=>{
+  const el=e.target.closest('.td');
+  if(e.touches.length!==1||!el||e.target.closest('button,textarea'))return tdPressCancel();
+  const t=e.touches[0];tdPress(el,t.clientX,t.clientY,true);
+},{passive:true});
+lst.addEventListener('touchmove',e=>{
+  const t=e.touches[0];
+  if(drag){e.preventDefault();tdMove(t.clientY);return}
+  if(hold){if(Math.abs(t.clientX-hold.x)>8||Math.abs(t.clientY-hold.y)>8)tdPressCancel();else hold.ly=t.clientY}
+},{passive:false});
+const tdTouchEnd=e=>{if(drag){if(e.cancelable)e.preventDefault();tdEnd()}else tdPressCancel()};
+lst.addEventListener('touchend',tdTouchEnd);lst.addEventListener('touchcancel',tdTouchEnd);
+lst.addEventListener('contextmenu',e=>{if(e.target.closest('.td'))e.preventDefault()});
+lst.addEventListener('mousedown',e=>{const el=e.target.closest('.td');if(e.button!==0||!el||e.target.closest('button,textarea'))return;tdPress(el,e.clientX,e.clientY,false)});
+document.addEventListener('mousemove',e=>{if(drag){tdMove(e.clientY);return}if(hold&&!hold.touch){if(Math.abs(e.clientX-hold.x)>5||Math.abs(e.clientY-hold.y)>5)tdPressCancel();else hold.ly=e.clientY}});
+document.addEventListener('mouseup',()=>{if(drag)tdEnd();else tdPressCancel()});
+
 // ---------- list setup / sharing ----------
 const link=()=>location.origin+location.pathname+'?list='+listCode;
-function resetLocal(){items=[];shared={};customCats={};save('cl_items',[]);save('cl_shared',{});save('cl_cats',{})}
+function resetLocal(){items=[];todos=[];shared={};customCats={};save('cl_todos',[]);save('cl_items',[]);save('cl_shared',{});save('cl_cats',{})}
 function joinList(code){
   code=cleanCode(code);if(code.length<4)return alert('Enter the list code');
   listCode=code;save('cl_code',code);resetLocal();
@@ -493,7 +670,7 @@ $('#leaveBtn').onclick=()=>{
 // (older versions stored the shared database under cl_catalog with single-language names; ignore it)
 const q=new URLSearchParams(location.search).get('list');
 if(q&&cleanCode(q)!==listCode){listCode=cleanCode(q);save('cl_code',listCode);resetLocal();history.replaceState(null,'',location.pathname)}
-render();connect();
+setTab(tab);render();connect();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body></html>
