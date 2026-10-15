@@ -1,7 +1,7 @@
 {
  "id": "cart-log-v1",
- "name": "Cart Log",
- "short_name": "Cart",
+ "name": "Home log",
+ "short_name": "Home log",
  "start_url": ".",
  "display": "standalone",
  "background_color": "#0f172a",
