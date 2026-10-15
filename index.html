@@ -711,6 +711,11 @@ $('#leaveBtn').onclick=()=>{
 const q=new URLSearchParams(location.search).get('list');
 if(q&&cleanCode(q)!==listCode){listCode=cleanCode(q);save('cl_code',listCode);resetLocal();history.replaceState(null,'',location.pathname)}
 setTab(tab);render();connect();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator){
+  // a new version takes over -> reload once so the open app is never stuck on old code (not while typing or dragging)
+  const had=!!navigator.serviceWorker.controller;let rl=0;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!had||rl)return;rl=1;const go=()=>{if(drag||document.activeElement?.matches?.('input,textarea'))return setTimeout(go,1500);location.reload()};go()});
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
 </script>
 </body></html>
