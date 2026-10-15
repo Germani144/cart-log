@@ -8,7 +8,7 @@ Rules for any Claude chat working on this repo.
 
 ## Every change
 - Update `README.md` in the same commit whenever a change adds, removes or changes a feature, a setting, the data layout, the Firestore rule, the files, or the setup steps.
-- Bump the cache name in `sw.js` (`cart-vN`) on every release that changes app files, so phones pick up the new version.
+- Bump the version on every release that changes app files, in both places with the same number: the `v1.0`-style label next to "Home log" in `index.html`, and the cache name `cart-X.Y` in `sw.js`. Small fix or tweak: +0.1. Big feature or redesign: next whole number. Tell Pedro the new version number when you push.
 - Test before pushing. UI changes: run the app in mobile-emulated Chromium (touch events) and check the affected flows, including both tabs, swipe, and to-do drag. Logic changes: test against a fake Firestore.
 - No build step: the app is plain static files served by GitHub Pages from `main`.
 

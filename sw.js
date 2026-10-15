@@ -1,4 +1,5 @@
-const C='cart-v8';
+// keep in step with APP_VERSION in index.html
+const C='cart-1.0';
 const SHELL=['./','index.html','firebase-config.js','seed.js','manifest.json'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(SHELL)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==C).map(n=>caches.delete(n)))))});

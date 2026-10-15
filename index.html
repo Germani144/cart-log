@@ -21,6 +21,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin:6px 
 h1{font-size:20px;margin:0}
 .brand{display:flex;align-items:center;gap:9px}
 .brand img{border-radius:8px;display:block}
+.ver{font-size:12px;font-weight:500;color:var(--mu);align-self:flex-end;margin:0 0 2px -3px}
 h2{font-size:13px;margin:16px 0 6px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center}
 button{font:inherit;border:0;border-radius:10px;padding:12px 14px;background:var(--ac);color:#0f172a;font-weight:600;cursor:pointer}
 button.ghost{background:transparent;color:var(--mu);font-weight:500;padding:6px 8px}
@@ -131,7 +132,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log</h1>
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v1.0</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>

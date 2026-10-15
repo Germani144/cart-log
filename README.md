@@ -24,7 +24,12 @@ Live: https://germani144.github.io/cart-log/ (the repo kept its original name, `
 - Share a list with its 8-character code or invite link (`?list=CODE`). Anyone with the code can see and edit it.
 - Offline-first: changes made without signal sync when the phone is back online.
 - Updates install themselves; the app reloads once when a new version is available.
+- The version (e.g. v1.0) shows next to the title, so you can tell which build a phone is running.
 - Follows the phone's light or dark mode.
+
+## Versioning
+
+Each release bumps the version in two places, kept identical: the label next to the title in `index.html` and the cache name in `sw.js` (`cart-X.Y`). Small fixes and tweaks raise the second number (1.0 → 1.1); bigger features or redesigns raise the first (1.4 → 2.0).
 
 ## How it's built
 
@@ -35,7 +40,7 @@ Plain static files, no build step, no framework.
 | `index.html` | The whole app: markup, styles and logic |
 | `seed.js` | Built-in bilingual item database and categories |
 | `firebase-config.js` | Firebase web config for the project |
-| `sw.js` | Service worker: caches the app for offline use (bump the cache name on each release) |
+| `sw.js` | Service worker: caches the app for offline use (cache name `cart-X.Y` matches the app version) |
 | `manifest.json` | Install name, icons and colours |
 | `icon-*.png` | App icons |
 
