@@ -1,17 +1,72 @@
-# Home log (repo: cart-log)
+# Home log
 
-Shared grocery list PWA. Live sync via Firebase Firestore (same project as nap-log).
-Share a list with the 8-character code or the invite link. Works offline.
+A shared grocery list and to-do list for a household, synced live between phones.
+Works on Android and iPhone as an installable web app, no accounts needed, and keeps working offline.
 
-- Shared item database with autocomplete (`lists/{code}/catalog`)
-- New items ask for a category (existing or new); the list is grouped by category
-- Lists live under `lists/{code}/items`
-- Shared to-do tab: `lists/{code}/todos` (roman-numbered, hold and drag to reorder, max 50 open, ticked ones sink to Done)
+Live: https://germani144.github.io/cart-log/ (the repo kept its original name, `cart-log`)
 
-Firestore rule:
+## Features
+
+**Groceries**
+- Add items in Danish or English (`2 mælk`, `milk`, `æbler`). Search ignores æ/ø/å spelling differences.
+- Built-in item database of ~280 items in 16 categories, each with a Danish and English name and a sensible default amount (milk 1 l, eggs 10 pcs, coffee 500 g).
+- Items you add that aren't in the database ask for a category (existing or new) and are then shared with everyone on the list.
+- List grouped by category, each with its own colour; new categories get a colour picker.
+- Amount and unit per item (pcs, g, kg, ml, dl, l, pack, can, bottle, bunch) with one-tap − / + right on the row.
+- Tick items into "In the cart", clear them all when you're done shopping.
+
+**To-dos**
+- A plain ordered list numbered i., ii., iii. … up to l. (50 open items).
+- Hold and drag to reorder; tick to move an item to Done (struck through, faded).
+
+**General**
+- Swipe left or right to switch tabs, with live feedback while dragging.
+- Share a list with its 8-character code or invite link (`?list=CODE`). Anyone with the code can see and edit it.
+- Offline-first: changes made without signal sync when the phone is back online.
+- Updates install themselves; the app reloads once when a new version is available.
+- Follows the phone's light or dark mode.
+
+## How it's built
+
+Plain static files, no build step, no framework.
+
+| File | What it does |
+|---|---|
+| `index.html` | The whole app: markup, styles and logic |
+| `seed.js` | Built-in bilingual item database and categories |
+| `firebase-config.js` | Firebase web config for the project |
+| `sw.js` | Service worker: caches the app for offline use (bump the cache name on each release) |
+| `manifest.json` | Install name, icons and colours |
+| `icon-*.png` | App icons |
+
+Hosting is GitHub Pages from `main`. Sync is Firebase Cloud Firestore (free Spark plan) with offline persistence.
+
+### Data layout
+
+Everything for one list lives under its code:
+
+```
+lists/{code}/items     grocery items (name, category, amount, unit, done)
+lists/{code}/catalog   items added by the household, shared across the list
+lists/{code}/cats      custom categories and their colours
+lists/{code}/todos     to-dos (text, order, done)
+```
+
+### Firestore rule
 
 ```
 match /lists/{listId}/{sub}/{id} {
   allow read, write: if true;
 }
 ```
+
+Rules are open by design: the unguessable list code is what keeps a list private. The web config in `firebase-config.js` is not a secret.
+
+## Running your own copy
+
+1. Copy the files into your own repo and enable GitHub Pages (branch `main`, root).
+2. Create a Firebase project, add a Firestore database, and publish the rule above.
+3. Register a web app in Firebase and paste its config into `firebase-config.js`.
+4. Open the Pages URL, create a list, and install it to the home screen.
+
+Without a config the app still runs, but the list stays on that one phone ("local only").
