@@ -11,6 +11,7 @@ Live: https://germani144.github.io/cart-log/ (the repo kept its original name, `
 - Add items in Danish or English (`2 mælk`, `milk`, `æbler`). Search ignores æ/ø/å spelling differences.
 - Built-in item database of ~280 items in 16 categories, each with a Danish and English name and a sensible default amount (milk 1 l, eggs 10 pcs, coffee 500 g).
 - Unknown items go straight onto the list under Andet / Other, no questions asked. Tap one later to give it a category (existing or new), an English name and a standard amount; it's then saved to the shared database, so next time it lands in the right category.
+- One-off buys: the edit screen of an item you added yourself has **Forget item** at the top, which removes it from the list and from the saved database so it stops being suggested. ("Remove from list" keeps it saved. Built-in items can't be forgotten.)
 - List grouped by category, each with its own colour; new categories get a colour picker.
 - Amount and unit per item (pcs, g, kg, ml, dl, l, pack, can, bottle, bunch) with one-tap − / + right on the row.
 - Tick items into "In the cart", clear them all when you're done shopping.
