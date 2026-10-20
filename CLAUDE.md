@@ -13,11 +13,19 @@ Rules for any Claude chat working on this repo.
 - No build step: the app is plain static files served by GitHub Pages from `main`.
 
 ## Don'ts
-- The origin (germani144.github.io) is shared with other apps: the service worker must only delete caches starting with `cart-log-`, only handle URLs under its own scope (plus the pinned Firebase SDK), and read from its own cache, never the global `caches.match()`. Every `localStorage` key must start with `cart-log.` (use the `load`/`save` helpers).
-- Keep Firebase initialised as the named app `cart-log` (never the default app): other apps on the origin share the Firebase project, and the app name is what keeps Firestore's offline database and `firestore_…` keys separate.
-- Never change the manifest `id` (`cart-log-v1`): it would make installed copies a different app.
 - Keep personal details (Firebase project sharing, names) out of public files like the README.
 - Firestore data lives under `lists/{code}/{items|catalog|cats|todos}`; don't move it without a migration, or existing lists disappear.
+
+## Shared origin (all of Pedro's apps live on germani144.github.io)
+
+Every app is served from the same origin, so they share one CacheStorage, one localStorage and one IndexedDB namespace. Keep these rules. Changes that apply to every app at once (caching and the like) are made from Pedro's orchestration chat; they never touch UI or calculations.
+
+- **Service worker:** Cache names start with `cart-log-` (the cache is `cart-log-X.Y`, same number as the version label). The pinned Firebase SDK on gstatic.com is the one outside file it also handles, because offline sync needs it. On activate, delete only caches with that prefix (never "every cache but the current one"). Read from this app's own cache (`caches.open(C).then(c => c.match(...))`), never the global `caches.match()`. Only handle requests whose URL starts with `self.registration.scope`; leave other apps, the GitHub API and other origins alone.
+- **Updates:** fetch network-first with `{cache: 'no-cache'}`, store only `r.ok` responses, fall back to this app's own cache when offline. Register the worker with `{scope: './', updateViaCache: 'none'}`.
+- **Storage:** every `localStorage` key starts with `cart-log.` (use the `load`/`save` helpers).
+- **Manifest:** `scope` and `start_url` are `./`. `id` is unique to this app and stays stable: changing it makes phones treat the app as a new install, so only do it deliberately.
+- Keep Firebase initialised as the named app `cart-log` (never the default app): other apps on the origin share the Firebase project, and the app name is what keeps Firestore's offline database and `firestore_…` keys separate.
+- The manifest `id` is `cart-log-v1`.
 
 ## Notes
 - The app reloads itself once when a new service worker takes over, so updates show on the next open. Re-installing is only needed for icon or name changes on the home screen.
