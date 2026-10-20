@@ -55,6 +55,7 @@ Every app on `germani144.github.io` shares one browser cache store and one `loca
 - On update it deletes only its own old caches (names starting with `cart-log-`), never other apps'.
 - Files are fetched network-first, bypassing the browser's HTTP cache, so a new deploy shows on the next open; when offline, the cached copy is used.
 - `localStorage` keys are prefixed `cart-log.` (older `cl_` keys are moved over automatically).
+- Firebase runs as a named app (`cart-log`), so Firestore's offline database and its tab-sync `localStorage` keys (`firestore_…/cart-log/…`) are separate from any other app on the origin that uses the same Firebase project.
 
 ### Data layout
 

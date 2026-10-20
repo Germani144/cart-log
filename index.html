@@ -132,7 +132,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v1.3</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v1.4</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -292,9 +292,11 @@ function connect(){
   unsubs.forEach(u=>u());unsubs=[];
   if(!listCode||!hasCfg()){setSync();return}
   if(!db){
-    firebase.initializeApp(FIREBASE_CONFIG);
-    try{firebase.firestore().enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch{}
-    db=firebase.firestore();
+    // named app: other apps on this origin use the same Firebase project, and Firestore's offline
+    // database and tab-sync keys are named after the app, so "cart-log" keeps ours separate
+    const fb=firebase.apps.find(a=>a.name==='cart-log')||firebase.initializeApp(FIREBASE_CONFIG,'cart-log');
+    try{fb.firestore().enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch{}
+    db=fb.firestore();
   }
   const bad=err=>{console.error(err);$('#sync').textContent='sync error';$('#dot').className='dot'};
   const watch=(name,apply)=>unsubs.push(col(name).onSnapshot({includeMetadataChanges:true},q=>{

@@ -14,6 +14,7 @@ Rules for any Claude chat working on this repo.
 
 ## Don'ts
 - The origin (germani144.github.io) is shared with other apps: the service worker must only delete caches starting with `cart-log-`, only handle URLs under its own scope (plus the pinned Firebase SDK), and read from its own cache, never the global `caches.match()`. Every `localStorage` key must start with `cart-log.` (use the `load`/`save` helpers).
+- Keep Firebase initialised as the named app `cart-log` (never the default app): other apps on the origin share the Firebase project, and the app name is what keeps Firestore's offline database and `firestore_…` keys separate.
 - Never change the manifest `id` (`cart-log-v1`): it would make installed copies a different app.
 - Keep personal details (Firebase project sharing, names) out of public files like the README.
 - Firestore data lives under `lists/{code}/{items|catalog|cats|todos}`; don't move it without a migration, or existing lists disappear.
