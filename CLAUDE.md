@@ -23,9 +23,9 @@ Every app is served from the same origin, so they share one CacheStorage, one lo
 - **Service worker:** Cache names start with `cart-log-` (the cache is `cart-log-X.Y`, same number as the version label). The pinned Firebase SDK on gstatic.com is the one outside file it also handles, because offline sync needs it. On activate, delete only caches with that prefix (never "every cache but the current one"). Read from this app's own cache (`caches.open(C).then(c => c.match(...))`), never the global `caches.match()`. Only handle requests whose URL starts with `self.registration.scope`; leave other apps, the GitHub API and other origins alone.
 - **Updates:** fetch network-first with `{cache: 'no-cache'}`, store only `r.ok` responses, fall back to this app's own cache when offline. Register the worker with `{scope: './', updateViaCache: 'none'}`.
 - **Storage:** every `localStorage` key starts with `cart-log.` (use the `load`/`save` helpers).
-- **Manifest:** `scope` and `start_url` are `./`. `id` is unique to this app and stays stable: changing it makes phones treat the app as a new install, so only do it deliberately.
+- **Manifest:** `scope` and `start_url` are `./`. **Never change the manifest `id`**, not even to fix an install problem, unless Pedro explicitly asks for it in that chat. The id is how Android recognises the installed app: changing it orphans the installed copy, and Chrome can get stuck saying "already installed" / "Could not open app" with no way to install it again short of clearing Chrome's storage (this happened on 2026-10-20). If installing fails on the phone, investigate and report; don't change the id.
 - Keep Firebase initialised as the named app `cart-log` (never the default app): other apps on the origin share the Firebase project, and the app name is what keeps Firestore's offline database and `firestore_…` keys separate.
-- The manifest `id` is `cart-log-v1`.
+- The manifest `id` is `cart-log-v1` (fixed; see the Manifest rule).
 
 ## Notes
 - The app reloads itself once when a new service worker takes over, so updates show on the next open. Re-installing is only needed for icon or name changes on the home screen.
