@@ -3,7 +3,7 @@
 A shared grocery list and to-do list for a household, synced live between phones.
 Works on Android and iPhone as an installable web app, no accounts needed, and keeps working offline.
 
-Live: https://germani144.github.io/cart-log/ (the repo kept its original name, `cart-log`)
+Live: https://germani144-home.github.io/cart-log/ (the repo kept its original name, `cart-log`). It moved from `germani144.github.io` on 2026-10-20 because Chrome on Android installs only one app per address; after the move, enter the list code once on each phone.
 
 ## Features
 
@@ -49,7 +49,7 @@ Hosting is GitHub Pages from `main`. Sync is Firebase Cloud Firestore (free Spar
 
 ### Offline and updates
 
-Every app on `germani144.github.io` shares one browser cache store and one `localStorage`, so this app keeps to its own:
+Home log has its own address, but it still keeps strictly to its own cache and storage (so it stays clean if it ever shares an address with another app):
 
 - The service worker only handles requests under its own scope (`/cart-log/`) plus the pinned Firebase SDK, and reads only from its own cache.
 - On update it deletes only its own old caches (names starting with `cart-log-`), never other apps'.
