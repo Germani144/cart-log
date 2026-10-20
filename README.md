@@ -30,7 +30,7 @@ Live: https://germani144.github.io/cart-log/ (the repo kept its original name, `
 
 ## Versioning
 
-Each release bumps the version in two places, kept identical: the label next to the title in `index.html` and the cache name in `sw.js` (`cart-X.Y`). Small fixes and tweaks raise the second number (1.0 → 1.1); bigger features or redesigns raise the first (1.4 → 2.0).
+Each release bumps the version in two places, kept identical: the label next to the title in `index.html` and the cache name in `sw.js` (`cart-log-X.Y`). Small fixes and tweaks raise the second number (1.0 → 1.1); bigger features or redesigns raise the first (1.4 → 2.0).
 
 ## How it's built
 
@@ -41,11 +41,20 @@ Plain static files, no build step, no framework.
 | `index.html` | The whole app: markup, styles and logic |
 | `seed.js` | Built-in bilingual item database and categories |
 | `firebase-config.js` | Firebase web config for the project |
-| `sw.js` | Service worker: caches the app for offline use (cache name `cart-X.Y` matches the app version) |
+| `sw.js` | Service worker: caches the app for offline use (cache name `cart-log-X.Y` matches the app version) |
 | `manifest.json` | Install name, icons and colours |
 | `icon-*.png` | App icons |
 
 Hosting is GitHub Pages from `main`. Sync is Firebase Cloud Firestore (free Spark plan) with offline persistence.
+
+### Offline and updates
+
+Every app on `germani144.github.io` shares one browser cache store and one `localStorage`, so this app keeps to its own:
+
+- The service worker only handles requests under its own scope (`/cart-log/`) plus the pinned Firebase SDK, and reads only from its own cache.
+- On update it deletes only its own old caches (names starting with `cart-log-`), never other apps'.
+- Files are fetched network-first, bypassing the browser's HTTP cache, so a new deploy shows on the next open; when offline, the cached copy is used.
+- `localStorage` keys are prefixed `cart-log.` (older `cl_` keys are moved over automatically).
 
 ### Data layout
 
