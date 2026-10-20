@@ -42,7 +42,7 @@ Plain static files, no build step, no framework.
 | `seed.js` | Built-in bilingual item database and categories |
 | `firebase-config.js` | Firebase web config for the project |
 | `sw.js` | Service worker: caches the app for offline use (cache name `cart-log-X.Y` matches the app version) |
-| `manifest.json` | Install name, icons and colours |
+| `manifest.json` | Install name, icons and colours; `scope` and `start_url` are `./`, so the installed app covers only `/cart-log/`, not the whole site |
 | `icon-*.png` | App icons |
 
 Hosting is GitHub Pages from `main`. Sync is Firebase Cloud Firestore (free Spark plan) with offline persistence.
