@@ -115,6 +115,21 @@ dialog button.wide{width:100%;margin-top:8px}
 .ds:last-child{border-bottom:0}
 .ds .tdt{padding:8px 0}
 .ds .x{flex:none;background:transparent;color:var(--mu);width:36px;height:36px;padding:0;margin-left:14px;font-weight:400}
+.ds .dsub{display:block;font-size:12px;color:var(--mu)}
+.ingh{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.srv{display:flex;align-items:center;gap:6px;color:var(--tx)}
+.srv .sb{width:30px;height:30px;font-size:17px}
+.srv b{min-width:16px;text-align:center}
+.ings{border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.ings:empty{display:none}
+.ing{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 12px;border-bottom:1px solid var(--bd)}
+.ing:last-child{border-bottom:0}
+.ing .nm{flex:1;min-width:0;word-break:break-word;line-height:1.2}
+.ing .nm .da{font-size:15px}.ing .nm .en{display:block;margin:0;font-size:12px}
+.ing input{flex:none;width:64px;padding:8px 6px;text-align:right;font-weight:700}
+.ing .un{flex:none;width:52px;color:var(--mu);font-size:14px}
+.ing select{flex:none;width:64px;padding:8px 2px;font:inherit;font-size:14px;border-radius:8px;border:1px solid var(--ac);background:var(--card);color:var(--tx)}
+.ing .x{flex:none;background:transparent;color:var(--mu);width:32px;height:32px;padding:0;font-weight:400}
 .td.lift{z-index:5;background:var(--card);box-shadow:inset 0 0 0 2px var(--td)}
 body.dragging{cursor:grabbing}
 .tded{flex:1;min-width:0;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--td);background:var(--card);color:var(--tx);resize:none;overflow:hidden;user-select:text;-webkit-user-select:text}
@@ -145,7 +160,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v1.7</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v1.8</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -238,12 +253,32 @@ body.dragging{cursor:grabbing}
   <div style="font-weight:600">Dish</div>
   <div class="lbl">Name</div>
   <input id="dsName" autocapitalize="sentences" autocomplete="off" enterkeyhint="done">
-  <div class="mu" style="margin-top:8px">Recipes are coming later.</div>
+  <div class="lbl ingh"><span>Ingredients</span><span class="srv">for <button id="srvM" class="sb" type="button" aria-label="Fewer people">−</button><b id="srvN">2</b><button id="srvP" class="sb" type="button" aria-label="More people">+</button> people</span></div>
+  <div id="ingList" class="ings"></div>
+  <input id="ingNew" placeholder="Add ingredient… (e.g. mel, 1 l milk)" autocomplete="off" spellcheck="false" enterkeyhint="done" style="margin-top:8px">
+  <div id="ingSug"></div>
+  <button id="dsToList" class="wide" type="button" style="margin-top:14px">🛒 Add to grocery list</button>
   <div class="dbtns">
     <button id="dsCancel" class="sec" type="button">Cancel</button>
     <button id="dsSave" type="button">Save</button>
   </div>
   <button id="dsDel" class="ghost wide" type="button" style="color:var(--dn)">Delete dish</button>
+</dialog>
+
+<!-- add a dish to the grocery list: how many people? -->
+<dialog id="ppDlg">
+  <div style="font-weight:600" id="ppTitle"></div>
+  <div class="lbl">How many people?</div>
+  <div class="qrow">
+    <button id="ppM" class="sec" type="button" aria-label="Fewer">−</button>
+    <input id="ppN" inputmode="numeric" autocomplete="off">
+    <button id="ppP" class="sec" type="button" aria-label="More">+</button>
+  </div>
+  <div id="ppPrev" class="mu" style="margin-top:8px"></div>
+  <div class="dbtns">
+    <button id="ppCancel" class="sec" type="button">Cancel</button>
+    <button id="ppGo" type="button">Add</button>
+  </div>
 </dialog>
 
 <!-- share / settings -->
@@ -422,6 +457,15 @@ function submitInput(){
 }
 const nameHtml=(da,en)=>`<b class="da">${esc(da)}</b>`+(en&&eqAny(forms(en),forms(da))===false?`<span class="en">${esc(en)}</span>`:'');
 const catName=id=>{const c=catInfo(id);return esc(c.da)+(c.en&&c.en!==c.da?` · ${esc(c.en)}`:'')};
+// best matches for typed text among database entries: name starts with it, then contains it, then its category does
+function searchEntries(c,rest){
+  const q=forms(rest);
+  return c.map(e=>{
+    const nf=[...forms(e.da),...forms(e.en)],cf=(ci=>[...forms(ci.da),...forms(ci.en||'')])(catInfo(e.cat));
+    const tier=startsAny(nf,q)?0:hasAny(nf,q)?1:hasAny(cf,q)?2:9;
+    return {e,tier};
+  }).filter(x=>x.tier<9).sort((a,b)=>a.tier-b.tier||(b.e.n||0)-(a.e.n||0)||a.e.da.length-b.e.da.length||a.e.da.localeCompare(b.e.da,'da')).slice(0,8);
+}
 function suggest(){
   const raw=$('#newItem').value.trim(),{rest}=parseQty(raw),box=$('#chips');
   const onList=new Set(items.filter(i=>!i.done).map(itemCid));
@@ -432,12 +476,7 @@ function suggest(){
     box.innerHTML=c.slice(0,8).map(e=>`<button class="chip" type="button" data-c="${esc(e.id)}">${nameHtml(e.da,e.en)}</button>`).join('');
     return;
   }
-  const q=forms(rest);
-  const scored=c.map(e=>{
-    const nf=[...forms(e.da),...forms(e.en)],cf=(ci=>[...forms(ci.da),...forms(ci.en||'')])(catInfo(e.cat));
-    const tier=startsAny(nf,q)?0:hasAny(nf,q)?1:hasAny(cf,q)?2:9;
-    return {e,tier};
-  }).filter(x=>x.tier<9).sort((a,b)=>a.tier-b.tier||b.e.n-a.e.n||a.e.da.length-b.e.da.length||a.e.da.localeCompare(b.e.da,'da')).slice(0,8);
+  const scored=searchEntries(c,rest);
   box.className='sugg';
   box.innerHTML=scored.map(({e})=>`<div class="sg" data-c="${esc(e.id)}"><span>${nameHtml(e.da,e.en)}</span><span class="cat">${esc(catInfo(e.cat).da)}</span></div>`).join('')
     +(findExact(rest)?'':`<div class="sg new" data-new="1">＋ Add “${esc(rest)}”</div>`);
@@ -599,16 +638,15 @@ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setT
 // Each dish is stored as {id,name,serves,ingredients,ts}. serves (default 2) and ingredients ([] for now)
 // are there for recipes later, so adding them won't need a data migration.
 const dishKey=s=>s.trim().toLocaleLowerCase('da');
-let dsOpen=null;
 function putDish(d){const i=dishes.findIndex(x=>x.id===d.id);if(i<0)dishes.push(d);else dishes[i]=d;save('cl_dishes',dishes);renderDishes();put('dishes',d)}
 function removeDish(id){dishes=dishes.filter(x=>x.id!==id);save('cl_dishes',dishes);renderDishes();del('dishes',id)}
 const dishByName=(n,except)=>dishes.find(d=>d.id!==except&&dishKey(d.name)===dishKey(n));
 function renderDishes(){
   if(!listCode)return;
   const l=[...dishes].sort((a,b)=>a.name.localeCompare(b.name,'da'));
-  $('#dsList').innerHTML=l.length?l.map(d=>`<div class="ds" data-id="${esc(d.id)}"><div class="tdt" data-de="${esc(d.id)}">${esc(d.name)}</div><button class="x" data-dd="${esc(d.id)}" aria-label="Delete">✕</button></div>`).join(''):'<div class="empty">No dishes yet.<br>Add one above, e.g. Lasagne.</div>';
+  $('#dsList').innerHTML=l.length?l.map(d=>`<div class="ds" data-id="${esc(d.id)}"><div class="tdt" data-de="${esc(d.id)}">${esc(d.name)}<span class="dsub" data-de="${esc(d.id)}">${(d.ingredients||[]).length?`${d.ingredients.length} ingredient${d.ingredients.length>1?'s':''} · for ${d.serves||2}`:'no recipe yet'}</span></div><button class="x" data-dd="${esc(d.id)}" aria-label="Delete">✕</button></div>`).join(''):'<div class="empty">No dishes yet.<br>Add one above, e.g. Lasagne.</div>';
   $('#dsN').textContent=l.length?` · ${l.length}`:'';
-  $('#dsTip').textContent=l.length?'tap to rename':'';
+  $('#dsTip').textContent=l.length?'tap for recipe':'';
 }
 $('#dsForm').onsubmit=e=>{
   e.preventDefault();const i=$('#dsNew'),name=i.value.trim().replace(/\s+/g,' ');if(!name)return;
@@ -620,20 +658,121 @@ $('#dsForm').onsubmit=e=>{
 $('#dsList').addEventListener('click',e=>{
   const x=e.target.closest('[data-dd]'),t=e.target.closest('[data-de]');
   if(x){const d=dishes.find(v=>v.id===x.dataset.dd);if(d&&confirm(`Delete "${d.name}"?`))removeDish(d.id);return}
-  if(t){const d=dishes.find(v=>v.id===t.dataset.de);if(!d)return;dsOpen=d.id;$('#dsName').value=d.name;$('#dsDlg').showModal()}
+  if(t)openDish(t.dataset.de);
 });
-function dsSave(){
-  const d=dishes.find(v=>v.id===dsOpen),name=$('#dsName').value.trim().replace(/\s+/g,' ');
-  if(!d){$('#dsDlg').close();return}
-  if(!name)return $('#dsName').focus();
-  if(dishByName(name,d.id))return alert(`"${name}" is already saved.`);
-  if(name!==d.name)putDish({...d,name});
-  $('#dsDlg').close();
+// ---------- recipe dialog ----------
+// ingredients come from the same item database as the grocery list; each stores {cid,da,en,amt,unit}.
+// The unit is the database item's standard unit and can't be changed here; only a brand-new ingredient
+// (not in the database yet) gets a unit picker, and is then saved to the database under Andet / Other.
+let ds=null; // {id,serves,ings:[...]}, edited in the dialog and written on Save
+const ROUND_UP=new Set(['pcs','pack','can','bottle','bunch']);
+function openDish(id){
+  const d=dishes.find(v=>v.id===id);if(!d)return;
+  ds={id,serves:d.serves||2,ings:(d.ingredients||[]).map(x=>({...x}))};
+  $('#dsName').value=d.name;$('#ingNew').value='';$('#ingSug').innerHTML='';
+  drawIngs();$('#dsDlg').showModal();
 }
+function drawIngs(){
+  $('#srvN').textContent=ds.serves;
+  $('#ingList').innerHTML=ds.ings.map((g,i)=>{
+    const e=entries()[g.cid],da=e?e.da:g.da,en=e?e.en:g.en;
+    const unit=g.isNew?`<select data-iu="${i}" aria-label="Unit">${UNITS.map(u=>`<option${u===g.unit?' selected':''}>${u}</option>`).join('')}</select>`:`<span class="un">${esc(g.unit)}</span>`;
+    return `<div class="ing"><div class="nm">${nameHtml(da,en)}</div><input data-ia="${i}" inputmode="decimal" value="${fmt(g.amt)}" aria-label="Amount">${unit}<button class="x" type="button" data-ix="${i}" aria-label="Remove">✕</button></div>`;
+  }).join('');
+  $('#dsToList').disabled=!ds.ings.length;$('#dsToList').style.opacity=ds.ings.length?1:.5;
+}
+function ingSuggest(){
+  const {rest}=parseQty($('#ingNew').value),box=$('#ingSug');
+  if(!rest){box.innerHTML='';box.className='';return}
+  const have=new Set(ds.ings.map(g=>g.cid));
+  const hits=searchEntries(Object.values(entries()).filter(e=>!have.has(e.id)),rest);
+  box.className='sugg';
+  box.innerHTML=hits.map(({e})=>`<div class="sg" data-ic="${esc(e.id)}"><span>${nameHtml(e.da,e.en)}</span><span class="cat">${esc(entryDef(e).unit)}</span></div>`).join('')
+    +(findExact(rest)?'':`<div class="sg new" data-inew="1">＋ New ingredient “${esc(rest)}”</div>`);
+}
+function addIng(e,isNew){
+  const {typed}=parseQty($('#ingNew').value),cid=keyOf(e.da);
+  const i=ds.ings.findIndex(g=>g.cid===cid);
+  if(i<0){
+    // "500 g mel" when flour is stored in kg -> 0,5 kg (only between compatible units)
+    const unit=isNew?(typed&&typed.unit)||'pcs':entryDef(e).unit;
+    let amt=typed&&typed.amt!=null?typed.amt:entryDef(e).amt;
+    if(!isNew&&typed&&typed.unit&&typed.amt!=null){const c=conv(typed.amt,typed.unit,unit);if(c!=null)amt=Math.round(c*1000)/1000}
+    ds.ings.push({cid,da:e.da,en:e.en||'',amt,unit,...(isNew?{isNew:true}:{})});
+  }
+  $('#ingNew').value='';ingSuggest();drawIngs();
+  const inp=document.querySelector(`#ingList [data-ia="${i<0?ds.ings.length-1:i}"]`);if(inp){inp.focus();inp.select()}
+}
+function ingFromText(){
+  const {rest}=parseQty($('#ingNew').value);if(!rest)return;
+  const e=findExact(rest);
+  if(e)addIng(e,false);else addIng({da:rest[0].toUpperCase()+rest.slice(1),en:''},true);
+}
+$('#ingNew').addEventListener('input',ingSuggest);
+$('#ingNew').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();ingFromText()}});
+$('#ingSug').addEventListener('click',e=>{
+  const c=e.target.closest('[data-ic]'),n=e.target.closest('[data-inew]');
+  if(c)addIng(entries()[c.dataset.ic],false);else if(n)ingFromText();
+});
+$('#ingList').addEventListener('input',e=>{const a=e.target.closest('[data-ia]');if(a)ds.ings[a.dataset.ia].amt=parseAmt(a.value)});
+$('#ingList').addEventListener('change',e=>{
+  const a=e.target.closest('[data-ia]'),u=e.target.closest('[data-iu]');
+  if(a){a.value=fmt(ds.ings[a.dataset.ia].amt)}
+  if(u){ds.ings[u.dataset.iu].unit=u.value}
+});
+$('#ingList').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('[data-ia]')){e.preventDefault();$('#ingNew').focus()}});
+$('#ingList').addEventListener('click',e=>{const x=e.target.closest('[data-ix]');if(x){ds.ings.splice(+x.dataset.ix,1);drawIngs()}});
+$('#srvM').onclick=()=>{if(ds.serves>1){ds.serves--;drawIngs()}};
+$('#srvP').onclick=()=>{if(ds.serves<20){ds.serves++;drawIngs()}};
+// write the dialog back to the dish; new ingredients also go into the shared item database
+function dsCommit(){
+  const d=dishes.find(v=>v.id===ds.id),name=$('#dsName').value.trim().replace(/\s+/g,' ');
+  if(!d)return true;
+  if(!name){$('#dsName').focus();return false}
+  if(dishByName(name,d.id)){alert(`"${name}" is already saved.`);return false}
+  ds.ings.forEach(g=>{if(g.isNew){if(!entries()[g.cid])upsertShared({id:g.cid,da:g.da,en:'',cat:'andet',amt:g.amt,unit:g.unit,n:0,at:Date.now()});delete g.isNew}});
+  putDish({...d,name,serves:ds.serves,ingredients:ds.ings.map(({cid,da,en,amt,unit})=>({cid,da,en,amt,unit}))});
+  return true;
+}
+function dsSave(){if(dsCommit())$('#dsDlg').close()}
 $('#dsSave').onclick=dsSave;
 $('#dsName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();dsSave()}});
 $('#dsCancel').onclick=()=>$('#dsDlg').close();
-$('#dsDel').onclick=()=>{const d=dishes.find(v=>v.id===dsOpen);if(d&&confirm(`Delete "${d.name}"?`))removeDish(d.id);$('#dsDlg').close()};
+$('#dsDel').onclick=()=>{const d=dishes.find(v=>v.id===ds.id);if(d&&confirm(`Delete "${d.name}"?`))removeDish(d.id);$('#dsDlg').close()};
+
+// ---------- add a dish to the grocery list, scaled to N people ----------
+const CONV={g:['m',1],kg:['m',1000],ml:['v',1],dl:['v',100],l:['v',1000]};
+const conv=(a,from,to)=>from===to?a:CONV[from]&&CONV[to]&&CONV[from][0]===CONV[to][0]?a*CONV[from][1]/CONV[to][1]:null;
+const niceAmt=(a,u)=>ROUND_UP.has(u)?Math.max(1,Math.ceil(a-1e-9)):(u==='g'||u==='ml')?Math.max(1,Math.round(a)):Math.max(.1,Math.round(a*10)/10);
+function scaledIngs(people){return ds.ings.map(g=>({...g,amt:niceAmt(g.amt*people/ds.serves,g.unit)}))}
+function ppPreview(){
+  const n=Math.max(1,Math.min(50,parseInt($('#ppN').value)||1));
+  $('#ppPrev').innerHTML=scaledIngs(n).map(g=>`${fmt(g.amt)} ${esc(g.unit)} ${esc((entries()[g.cid]||g).da)}`).join('<br>');
+}
+$('#dsToList').onclick=()=>{
+  if(!ds.ings.length||!dsCommit())return;
+  $('#ppTitle').textContent=`Add ${$('#dsName').value.trim()} to the grocery list`;
+  $('#ppN').value=ds.serves;ppPreview();$('#ppDlg').showModal();
+};
+$('#ppN').addEventListener('input',ppPreview);
+$('#ppM').onclick=()=>{$('#ppN').value=Math.max(1,(parseInt($('#ppN').value)||1)-1);ppPreview()};
+$('#ppP').onclick=()=>{$('#ppN').value=Math.min(50,(parseInt($('#ppN').value)||0)+1);ppPreview()};
+$('#ppCancel').onclick=()=>$('#ppDlg').close();
+$('#ppGo').onclick=()=>{
+  const n=Math.max(1,Math.min(50,parseInt($('#ppN').value)||1));let added=0,merged=0,kept=[];
+  for(const g of scaledIngs(n)){
+    const e=entries()[g.cid]||{da:g.da,en:g.en,cat:'andet',amt:g.amt,unit:g.unit};
+    const on=items.find(i=>!i.done&&itemCid(i)===g.cid);
+    if(!on){addToList(e,{amt:g.amt,unit:g.unit},false);added++;continue}
+    // already on the list: add to its amount when the units can be combined (g↔kg, ml↔dl↔l)
+    const q=itemQty(on),c=conv(g.amt,g.unit,q.unit);
+    if(c==null){kept.push(e.da);continue}
+    putItem(withQty(on,Math.round((q.amt+c)*100)/100,q.unit));merged++;
+  }
+  $('#ppDlg').close();$('#dsDlg').close();
+  $('#dsHint').textContent=`${$('#dsName').value.trim()} for ${n}: ${added} added`+(merged?`, ${merged} topped up`:'')+(kept.length?`, already on the list in another unit: ${kept.join(', ')}`:'')+'.';
+  setTimeout(()=>$('#dsHint').textContent='',6000);
+};
 
 // ---------- to-dos: one shared ordered list; numbered i., ii., … by position; ticked ones sink to "Done" ----------
 const TODO_MAX=50;
