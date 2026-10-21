@@ -110,7 +110,7 @@ dialog button.wide{width:100%;margin-top:8px}
 .td{position:relative;display:flex;align-items:center;gap:10px;padding:8px 6px 8px 12px;background:color-mix(in srgb,var(--td) 9%,transparent);border-bottom:1px solid color-mix(in srgb,var(--td) 22%,transparent);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .td:last-child{border-bottom:0}
 .tchk{flex:none;width:26px;height:26px;padding:0;border-radius:50%;border:2px solid var(--td);background:transparent;color:var(--tdt);font-size:15px;display:grid;place-items:center}
-.rn{flex:none;width:var(--rw,2em);text-align:right;font:italic 600 15px/1 Georgia,'Times New Roman',serif;color:var(--td)}
+.rn{flex:none;width:.8em;text-align:center;font:700 20px/1 system-ui,sans-serif;color:var(--td)}
 .tdt{flex:1;min-width:0;word-break:break-word;cursor:pointer;padding:5px 0}
 .td .x{flex:none;background:transparent;color:var(--mu);width:36px;height:36px;padding:0;margin-left:14px;font-weight:400}
 .td.done{opacity:.5}
@@ -141,6 +141,12 @@ dialog button.wide{width:100%;margin-top:8px}
 .ing .un{flex:none;width:52px;color:var(--mu);font-size:14px}
 .ing select{flex:none;width:64px;padding:8px 2px;font:inherit;font-size:14px;border-radius:8px;border:1px solid var(--ac);background:var(--card);color:var(--tx)}
 .ing .x{flex:none;background:transparent;color:var(--mu);width:32px;height:32px;padding:0;font-weight:400}
+.hdb{flex:none;width:48px;padding:0;font:700 18px Georgia,'Times New Roman',serif;background:var(--card);color:var(--mu);border:1px solid var(--bd)}
+.hdb[aria-pressed="true"]{background:var(--td);color:var(--tdt);border-color:var(--td)}
+#tdNew.hdm{font-weight:700}
+.td.hd{background:color-mix(in srgb,var(--td) 20%,transparent);padding-left:14px}
+.td.hd .tdt{font-weight:700;font-size:15px;letter-spacing:.01em}
+.td.hd:not(:first-child){border-top:6px solid var(--card)}
 .td.lift{z-index:5;background:var(--card);box-shadow:inset 0 0 0 2px var(--td)}
 body.dragging{cursor:grabbing}
 .tded{flex:1;min-width:0;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--td);background:var(--card);color:var(--tx);resize:none;overflow:hidden;user-select:text;-webkit-user-select:text}
@@ -171,7 +177,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.0</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.1</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -200,6 +206,7 @@ body.dragging{cursor:grabbing}
   <div id="tlChips" class="chips tlc"></div>
   <form id="tdForm" class="add" autocomplete="off">
     <input id="tdNew" placeholder="Add a to-do…" enterkeyhint="done" autocapitalize="sentences" autocomplete="off">
+    <button id="tdHeadBtn" class="hdb" type="button" aria-pressed="false" title="Add as a heading">H</button>
   </form>
   <div id="tdHint" class="mu" style="margin-top:6px"></div>
   <div class="list tdl" style="--c:var(--td);--t:var(--tdt);margin-top:12px">
@@ -884,10 +891,12 @@ function removeTodo(id){
   if(ptodos.some(x=>x.id===id)){ptodos=ptodos.filter(x=>x.id!==id);save('cl_ptodos',ptodos);renderTodos();delP('todos',id)}
   else{todos=todos.filter(x=>x.id!==id);save('cl_todos',todos);renderTodos();del('todos',id)}
 }
-function addTodo(text){
-  text=text.trim();if(!text||todoOpen().length>=TODO_MAX)return false;
+// headings (head:true) are section titles inside a list: no tick box, never "done", don't count as to-dos
+const isItem=t=>!t.head;
+function addTodo(text,head){
+  text=text.trim();if(!text||(!head&&todoOpen().filter(isItem).length>=TODO_MAX))return false;
   const l=tlCur();
-  putTodo({id:uid(),text,done:false,order:tlView().reduce((m,t)=>Math.max(m,t.order||0),0)+1000,ts:Date.now(),...(l.id==='main'?{}:{list:l.id})});
+  putTodo({id:uid(),text,done:false,order:tlView().reduce((m,t)=>Math.max(m,t.order||0),0)+1000,ts:Date.now(),...(head?{head:true}:{}),...(l.id==='main'?{}:{list:l.id})});
   return true;
 }
 function renderTodos(){
@@ -896,20 +905,26 @@ function renderTodos(){
   tdDirty=false;
   drawTL();
   const open=todoOpen(),done=tlView().filter(t=>t.done).sort((a,b)=>(b.ts||0)-(a.ts||0));
-  const w=Math.max(1,...open.map((_,i)=>roman(i+1).length));
-  $('#tdOpen').style.setProperty('--rw',(w*.55+.6)+'em');
-  $('#tdOpen').innerHTML=open.length?open.map((t,i)=>`<div class="td" data-id="${esc(t.id)}"><button class="tchk" data-xt="${esc(t.id)}" aria-label="Done"></button><span class="rn">${roman(i+1)}.</span><div class="tdt" data-xe="${esc(t.id)}">${esc(t.text)}</div><button class="x" data-xd="${esc(t.id)}" aria-label="Delete">✕</button></div>`).join(''):'<div class="empty">Nothing to do 🎉<br>Add a to-do above.</div>';
-  $('#tdN').textContent=open.length?` · ${open.length}`:'';
+  const nItems=open.filter(isItem).length;
+  $('#tdOpen').innerHTML=open.length?open.map(t=>t.head
+    ?`<div class="td hd" data-id="${esc(t.id)}"><div class="tdt" data-xe="${esc(t.id)}">${esc(t.text)}</div><button class="x" data-xd="${esc(t.id)}" aria-label="Delete heading">✕</button></div>`
+    :`<div class="td" data-id="${esc(t.id)}"><button class="tchk" data-xt="${esc(t.id)}" aria-label="Done"></button><span class="rn">•</span><div class="tdt" data-xe="${esc(t.id)}">${esc(t.text)}</div><button class="x" data-xd="${esc(t.id)}" aria-label="Delete">✕</button></div>`).join(''):'<div class="empty">Nothing to do 🎉<br>Add a to-do above.</div>';
+  $('#tdN').textContent=nItems?` · ${nItems}`:'';
   $('#tdTip').textContent=open.length>1?'hold & drag to reorder':'';
   $('#tdDoneCard').hidden=!done.length;
   $('#tdDoneN').textContent=` · ${done.length}`;
   $('#tdDone').innerHTML=done.map(t=>`<div class="td done" data-id="${esc(t.id)}"><button class="tchk" data-xt="${esc(t.id)}" aria-label="Undo">✓</button><div class="tdt">${esc(t.text)}</div><button class="x" data-xd="${esc(t.id)}" aria-label="Delete">✕</button></div>`).join('');
-  const full=open.length>=TODO_MAX;
-  $('#tdNew').disabled=full;$('#tdNew').placeholder=full?'List is full (50). Tick or delete one first':'Add a to-do…';
-  $('#tdHint').textContent=open.length>=40?`${open.length} of ${TODO_MAX}`:'';
-  $('#cntT').textContent=open.length||'';
+  const full=nItems>=TODO_MAX&&!tdHeadMode;
+  $('#tdNew').disabled=full;$('#tdNew').placeholder=full?'List is full (50). Tick or delete one first':tdHeadMode?'Add a heading…':'Add a to-do…';
+  $('#tdHint').textContent=nItems>=40?`${nItems} of ${TODO_MAX}`:'';
+  $('#cntT').textContent=nItems||'';
 }
-$('#tdForm').onsubmit=e=>{e.preventDefault();const i=$('#tdNew');if(addTodo(i.value))i.value='';i.focus()};
+// H button: the next entry becomes a heading; it switches back to normal to-dos after one heading
+var tdHeadMode=false;
+function setHeadMode(on){tdHeadMode=on;$('#tdHeadBtn').setAttribute('aria-pressed',on);$('#tdNew').classList.toggle('hdm',on);renderTodos()}
+$('#tdHeadBtn').addEventListener('pointerdown',e=>e.preventDefault());   // keep the keyboard open
+$('#tdHeadBtn').onclick=()=>{setHeadMode(!tdHeadMode);$('#tdNew').focus()};
+$('#tdForm').onsubmit=e=>{e.preventDefault();const i=$('#tdNew');if(addTodo(i.value,tdHeadMode)){i.value='';if(tdHeadMode)setHeadMode(false)}i.focus()};
 $('#tdClear').onclick=()=>{const d=tlView().filter(t=>t.done);if(d.length&&confirm(`Remove ${d.length} done to-do${d.length>1?'s':''}?`))d.forEach(t=>removeTodo(t.id))};
 
 // list chips: tap to switch, tap the current one to edit it, ＋ to make a new list

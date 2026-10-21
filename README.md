@@ -20,7 +20,7 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 - Several lists, picked with chips at the top of the tab. **Home** is the original shared list (tap it again to rename it or change its icon); **＋ New list** makes another one with a name and icon.
 - Each new list is either **shared** (everyone with the list code sees it) or **private** (🔒, only this phone). Private lists are stored under the phone's own private code, which is never shared; it's shown in ⋯ → *Your private lists*, and *Restore private lists from another phone* brings them back on a new phone. A private list stays private (it can't be turned into a shared one).
 - Tap the selected list's chip again to rename it, change its icon, or delete it with its to-dos.
-- Each list is a plain ordered list numbered i., ii., iii. … up to l. (50 open items). The tab badge counts the open items of the list you're on.
+- Each list is an ordered list of bulleted to-dos (up to 50 open). Tap **H** next to the input to add the next entry as a **heading** instead (it switches back after one); headings group to-dos into sections, have no tick box, and can be edited, dragged and deleted like to-dos. The tab badge counts the open to-dos (not headings) of the list you're on.
 - Hold and drag to reorder; tick to move an item to Done (struck through, faded).
 
 **Recipes**
@@ -79,7 +79,7 @@ Everything for one list lives under its code:
 lists/{code}/items     grocery items (name, category, amount, unit, done)
 lists/{code}/catalog   items added by the household, shared across the list
 lists/{code}/cats      custom categories and their colours
-lists/{code}/todos     to-dos (text, order, done, list: absent for Home, else the list's id)
+lists/{code}/todos     to-dos (text, order, done, head: true for headings, list: absent for Home, else the list's id)
 lists/{code}/dishes    saved dishes (name, serves, ingredients: [{cid, da, en, amt, unit}])
 lists/{code}/meta      list settings: "dishes" (title of the dish list), "tl_main" (Home's name/icon),
                        "tl_<id>" (each extra shared to-do list: name, emoji)
