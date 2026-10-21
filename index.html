@@ -179,7 +179,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.4</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.5</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -1039,7 +1039,12 @@ function tdBegin(el,y){
   if(tdEditing||!el.isConnected)return;
   const group=[];
   if(isHd(el)){for(let n=el.nextElementSibling;n&&!isHd(n);n=n.nextElementSibling)group.push(n)}
+  // keep the page the same height while the section is folded, so the heading stays under the finger
+  const top0=el.getBoundingClientRect().top,hid=group.reduce((h,n)=>h+n.offsetHeight,0);
+  if(document.activeElement&&document.activeElement!==document.body)document.activeElement.blur();
+  if(hid)lst.style.paddingBottom=hid+'px';
   group.forEach(n=>n.style.display='none');
+  const shift=el.getBoundingClientRect().top-top0;if(Math.abs(shift)>1)scrollBy(0,shift);
   if(group.length)el.querySelector('.hdn').textContent=`+${group.length} to-do${group.length>1?'s':''}`;
   drag={el,id:el.dataset.id,startY:y+scrollY,cy:y,raf:0,group};
   el.classList.add('lift');document.body.classList.add('dragging');
@@ -1090,10 +1095,11 @@ function tdAuto(){   // scroll the page while the finger is near the top or bott
 }
 function tdEnd(){
   const d=drag;if(!d)return;drag=null;cancelAnimationFrame(d.raf);
-  suppressClickUntil=Date.now()+200;
+  suppressClickUntil=Date.now()+600;
   d.el.classList.remove('lift');document.body.classList.remove('dragging');d.el.style.transform='';
   if(isHd(d.el)){
     let ref=d.el.nextSibling;d.group.forEach(n=>{lst.insertBefore(n,ref);n.style.display=''});   // unfold under the heading
+    lst.style.paddingBottom='';
     return tdCommitSection([d.id,...d.group.map(n=>n.dataset.id)],[...lst.children].map(r=>r.dataset.id));
   }
   tdCommit(d.id,[...lst.children].map(r=>r.dataset.id));
@@ -1135,6 +1141,11 @@ lst.addEventListener('contextmenu',e=>{if(e.target.closest('.td'))e.preventDefau
 lst.addEventListener('mousedown',e=>{const el=e.target.closest('.td');if(e.button!==0||!el||e.target.closest('button,textarea'))return;tdPress(el,e.clientX,e.clientY,false)});
 document.addEventListener('mousemove',e=>{if(drag){tdMove(e.clientY);return}if(hold&&!hold.touch){if(Math.abs(e.clientX-hold.x)>5||Math.abs(e.clientY-hold.y)>5)tdPressCancel();else hold.ly=e.clientY}});
 document.addEventListener('mouseup',()=>{if(drag)tdEnd();else tdPressCancel()});
+
+// right after a drag, the phone may send a stray tap to whatever is under the finger (e.g. the to-do input,
+// which would pop up the keyboard): swallow taps and focus for a moment
+['mousedown','click','pointerdown'].forEach(t=>document.addEventListener(t,e=>{if(Date.now()<suppressClickUntil&&!drag){e.preventDefault();e.stopPropagation()}},true));
+document.addEventListener('focusin',e=>{if(Date.now()<suppressClickUntil&&e.target.matches&&e.target.matches('input,textarea'))e.target.blur()},true);
 
 // swipe left/right to change tab, with live feedback: the page follows the finger, a label names the next tab,
 // and it lights up once the swipe is long enough to switch.
