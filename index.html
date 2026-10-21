@@ -177,7 +177,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.2</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.3</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -336,6 +336,7 @@ body.dragging{cursor:grabbing}
   <div class="mu" id="meInfo"></div>
   <div id="meShow" class="code" hidden></div>
   <button id="meBtn" class="wide sec">Restore private lists from another phone</button>
+  <button id="updBtn" class="wide sec" style="margin-top:14px">Check for updates</button>
   <button id="leaveBtn" class="ghost wide" style="margin-top:14px;color:var(--dn)">Leave this list</button>
   <button id="closeBtn" class="ghost wide">Close</button>
 </dialog>
@@ -1144,6 +1145,20 @@ $('#meBtn').onclick=()=>{
   if(v.length<6||v===listCode)return alert('That doesn\'t look like a private code.');
   if(me&&me!==v&&!confirm('Switch to that private code? Private lists on this phone stay under the old code '+me+'.'))return;
   me=v;save('cl_me',me);ptodos=[];pmeta={};save('cl_ptodos',[]);save('cl_pmeta',{});connect();drawMe();renderTodos();
+};
+// compare the version on the server (cache name in sw.js) with this copy; if newer, drop this app's caches and reload
+$('#updBtn').onclick=async()=>{
+  const btn=$('#updBtn'),cur=$('#ver').textContent.replace(/^v/,'');btn.textContent='Checking…';btn.disabled=true;
+  let latest=null;
+  try{const t=await (await fetch('sw.js?check='+Date.now(),{cache:'no-store'})).text();latest=(/PREFIX\+'([\d.]+)'/.exec(t)||[])[1]||null}catch{}
+  btn.textContent='Check for updates';btn.disabled=false;
+  if(!latest)return alert('Couldn\'t reach the server. Check the connection and try again.');
+  if(latest===cur)return alert(`You're on the latest version (v${cur}).`);
+  if(!confirm(`Version v${latest} is available (you have v${cur}). Update now?`))return;
+  btn.textContent='Updating…';btn.disabled=true;
+  try{const reg=await navigator.serviceWorker?.getRegistration();if(reg)await reg.update()}catch{}
+  try{for(const k of await caches.keys())if(k.startsWith('cart-log-'))await caches.delete(k)}catch{}
+  location.reload();
 };
 $('#menu').onclick=()=>{$('#codeShow').textContent=listCode;drawMe();$('#shareBtn').hidden=!navigator.share;$('#dlg').showModal()};
 $('#closeBtn').onclick=()=>$('#dlg').close();

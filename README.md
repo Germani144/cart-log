@@ -37,7 +37,7 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 - Share a list with its 8-character code or invite link (`?list=CODE`). Anyone with the code can see and edit it.
 - Opening an invite link joins the list straight away, and the code stays in the address. On iPhone that matters: a home-screen app has its own storage, separate from Safari, so "Add to Home Screen" from that page installs an app that's already in the list. (The installed app only uses that code if it has no list yet, so leaving or switching lists in the app sticks.)
 - Offline-first: changes made without signal sync when the phone is back online.
-- Updates install themselves; the app reloads once when a new version is available.
+- Updates install themselves; the app reloads once when a new version is available. ⋯ → **Check for updates** compares with the version on the server and, if there's a newer one, clears the app's cache and reloads straight into it.
 - The version (e.g. v1.0) shows next to the title, so you can tell which build a phone is running.
 - Follows the phone's light or dark mode.
 - Dialogs open without popping up the keyboard; it appears when you tap a field. While the keyboard is up, the dialog fits above it and scrolls the field you're typing in to the top, so suggestions stay visible.
