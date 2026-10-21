@@ -35,6 +35,7 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 - Updates install themselves; the app reloads once when a new version is available.
 - The version (e.g. v1.0) shows next to the title, so you can tell which build a phone is running.
 - Follows the phone's light or dark mode.
+- Dialogs open without popping up the keyboard; it appears when you tap a field. While the keyboard is up, the dialog fits above it and scrolls the field you're typing in to the top, so suggestions stay visible.
 
 ## Versioning
 

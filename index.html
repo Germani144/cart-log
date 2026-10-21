@@ -76,6 +76,11 @@ input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--bd);ba
 .warn{color:var(--dn);font-size:14px;margin-top:8px}
 dialog{border:1px solid var(--bd);border-radius:14px;background:var(--card);color:var(--tx);width:min(92vw,420px);max-height:88vh;overflow:auto;padding:16px}
 dialog::backdrop{background:rgba(0,0,0,.5)}
+/* dialog title takes the focus when a dialog opens, so the keyboard only appears once you tap a field */
+.dt{font-weight:600;outline:none}
+/* keyboard open: the dialog sits at the top of the visible area and fits above the keyboard */
+dialog{max-height:calc(var(--vvh,100dvh) - 24px)}
+html.kb dialog[open]{margin:calc(var(--vvt,0px) + 8px) auto auto;max-height:calc(var(--vvh,100dvh) - 16px)}
 dialog button.wide{width:100%;margin-top:8px}
 .dbtns{display:flex;gap:8px;margin-top:14px}.dbtns button{flex:1}
 .lbl{font-size:13px;color:var(--mu);margin:12px 0 6px}
@@ -160,7 +165,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v1.8</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v1.9</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -250,7 +255,7 @@ body.dragging{cursor:grabbing}
 
 <!-- dish -->
 <dialog id="dsDlg">
-  <div style="font-weight:600">Dish</div>
+  <div class="dt" tabindex="-1" autofocus>Dish</div>
   <div class="lbl">Name</div>
   <input id="dsName" autocapitalize="sentences" autocomplete="off" enterkeyhint="done">
   <div class="lbl ingh"><span>Ingredients</span><span class="srv">for <button id="srvM" class="sb" type="button" aria-label="Fewer people">−</button><b id="srvN">2</b><button id="srvP" class="sb" type="button" aria-label="More people">+</button> people</span></div>
@@ -267,7 +272,7 @@ body.dragging{cursor:grabbing}
 
 <!-- add a dish to the grocery list: how many people? -->
 <dialog id="ppDlg">
-  <div style="font-weight:600" id="ppTitle"></div>
+  <div class="dt" id="ppTitle" tabindex="-1" autofocus></div>
   <div class="lbl">How many people?</div>
   <div class="qrow">
     <button id="ppM" class="sec" type="button" aria-label="Fewer">−</button>
@@ -622,6 +627,26 @@ $('#addForm').onsubmit=e=>{e.preventDefault();submitInput();$('#newItem').focus(
 $('#newItem').oninput=suggest;
 $('#clearDone').onclick=()=>{const d=items.filter(i=>i.done);if(d.length&&confirm(`Remove ${d.length} item${d.length>1?'s':''} from the cart?`))d.forEach(i=>removeItem(i.id))};
 
+// ---------- on-screen keyboard: keep dialogs inside the visible area ----------
+// The keyboard shrinks the visual viewport; track its height/offset in CSS vars and flag "kb" while it's up.
+// The field being typed in is scrolled to the top of its dialog so what's below it (suggestions) stays visible.
+let vvMax=0;
+function fitViewport(){
+  const v=window.visualViewport;if(!v)return;
+  vvMax=Math.max(vvMax,v.height);
+  const r=document.documentElement;
+  r.style.setProperty('--vvh',v.height+'px');r.style.setProperty('--vvt',v.offsetTop+'px');
+  r.classList.toggle('kb',v.height<vvMax*.78);
+}
+if(window.visualViewport){visualViewport.addEventListener('resize',fitViewport);visualViewport.addEventListener('scroll',fitViewport);fitViewport()}
+addEventListener('orientationchange',()=>{vvMax=0;setTimeout(fitViewport,300)});
+document.addEventListener('focusin',e=>{
+  const f=e.target,d=f.closest&&f.closest('dialog');
+  if(!d||!f.matches('input:not([type=color]),textarea'))return;
+  const go=()=>{const dr=d.getBoundingClientRect(),fr=f.getBoundingClientRect();d.scrollTo({top:d.scrollTop+fr.top-dr.top-16,behavior:'smooth'})};
+  setTimeout(go,350);  // after the keyboard has opened
+});
+
 // ---------- tabs ----------
 const SWT=['g','t','d'],SWN={g:'Groceries',t:'To-dos',d:'Dishes'},PANE={g:'#paneG',t:'#paneT',d:'#paneD'};
 let tab=load('cl_tab','g');
@@ -670,7 +695,7 @@ function openDish(id){
   const d=dishes.find(v=>v.id===id);if(!d)return;
   ds={id,serves:d.serves||2,ings:(d.ingredients||[]).map(x=>({...x}))};
   $('#dsName').value=d.name;$('#ingNew').value='';$('#ingSug').innerHTML='';
-  drawIngs();$('#dsDlg').showModal();
+  drawIngs();$('#dsDlg').showModal();$('#dsDlg .dt').focus();$('#dsDlg').scrollTop=0;
 }
 function drawIngs(){
   $('#srvN').textContent=ds.serves;
@@ -752,7 +777,7 @@ function ppPreview(){
 $('#dsToList').onclick=()=>{
   if(!ds.ings.length||!dsCommit())return;
   $('#ppTitle').textContent=`Add ${$('#dsName').value.trim()} to the grocery list`;
-  $('#ppN').value=ds.serves;ppPreview();$('#ppDlg').showModal();
+  $('#ppN').value=ds.serves;ppPreview();$('#ppDlg').showModal();$('#ppTitle').focus();
 };
 $('#ppN').addEventListener('input',ppPreview);
 $('#ppM').onclick=()=>{$('#ppN').value=Math.max(1,(parseInt($('#ppN').value)||1)-1);ppPreview()};
