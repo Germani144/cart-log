@@ -121,6 +121,11 @@ dialog button.wide{width:100%;margin-top:8px}
 .ds .tdt{padding:8px 0}
 .ds .x{flex:none;background:transparent;color:var(--mu);width:36px;height:36px;padding:0;margin-left:14px;font-weight:400}
 .dsT{cursor:pointer}.dsT::after{content:' ✎';font-weight:400;opacity:.7}
+.tlc{margin:0 0 8px}
+.tlc .chip.on{background:var(--td);border-color:var(--td);color:var(--tdt);font-weight:600}
+.tlc .chip.add{color:var(--mu);border-style:dashed}
+#tlDlg .chip.sel{border-color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac);font-weight:600}
+#tlEmo .chip{font-size:20px;padding:4px 9px}
 .ds .dsub{display:block;font-size:12px;color:var(--mu)}
 .ingh{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .srv{display:flex;align-items:center;gap:6px;color:var(--tx)}
@@ -166,7 +171,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v2.2</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.0</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -192,12 +197,13 @@ body.dragging{cursor:grabbing}
 </div>
 
 <div id="paneT" hidden>
+  <div id="tlChips" class="chips tlc"></div>
   <form id="tdForm" class="add" autocomplete="off">
     <input id="tdNew" placeholder="Add a to-do…" enterkeyhint="done" autocapitalize="sentences" autocomplete="off">
   </form>
   <div id="tdHint" class="mu" style="margin-top:6px"></div>
   <div class="list tdl" style="--c:var(--td);--t:var(--tdt);margin-top:12px">
-    <div class="gh"><b>To do</b><span class="en" id="tdN"></span><span class="hint" id="tdTip"></span></div>
+    <div class="gh"><b id="tdTitle">To do</b><span class="en" id="tdN"></span><span class="hint" id="tdTip"></span></div>
     <div id="tdOpen" style="position:relative"></div>
   </div>
   <div id="tdDoneCard" class="list tdl" style="--c:#5F6B7A;--t:#fff;margin-top:12px" hidden>
@@ -272,6 +278,28 @@ body.dragging{cursor:grabbing}
   <button id="dsDel" class="ghost wide" type="button" style="color:var(--dn)">Delete dish</button>
 </dialog>
 
+<!-- to-do list: new / edit -->
+<dialog id="tlDlg">
+  <div class="dt" id="tlHead" tabindex="-1" autofocus></div>
+  <div class="lbl">Name</div>
+  <input id="tlName" autocapitalize="sentences" autocomplete="off" enterkeyhint="done" maxlength="30">
+  <div class="lbl">Icon</div>
+  <div id="tlEmo" class="chips"></div>
+  <div id="tlKindBox">
+    <div class="lbl">Who can see it?</div>
+    <div class="chips">
+      <button type="button" class="chip" data-tk="shared">👥 Shared with the household</button>
+      <button type="button" class="chip" data-tk="priv">🔒 Private, only me</button>
+    </div>
+    <div id="tlKindHint" class="mu" style="margin-top:6px;font-size:13px"></div>
+  </div>
+  <div class="dbtns">
+    <button id="tlCancel" class="sec" type="button">Cancel</button>
+    <button id="tlSave" type="button">Save</button>
+  </div>
+  <button id="tlDel" class="ghost wide" type="button" style="color:var(--dn)">Delete list and its to-dos</button>
+</dialog>
+
 <!-- add a dish to the grocery list: how many people? -->
 <dialog id="ppDlg">
   <div class="dt" id="ppTitle" tabindex="-1" autofocus></div>
@@ -297,6 +325,10 @@ body.dragging{cursor:grabbing}
   <button id="copyBtn" class="wide sec">Copy link</button>
   <button id="mgrBtn" class="wide sec">Manage your items &amp; categories</button>
   <button id="packBtn" class="wide sec">Add starter dishes with recipes</button>
+  <div style="font-weight:600;margin-top:16px">Your private lists</div>
+  <div class="mu" id="meInfo"></div>
+  <div id="meShow" class="code" hidden></div>
+  <button id="meBtn" class="wide sec">Restore private lists from another phone</button>
   <button id="leaveBtn" class="ghost wide" style="margin-top:14px;color:var(--dn)">Leave this list</button>
   <button id="closeBtn" class="ghost wide">Close</button>
 </dialog>
@@ -349,9 +381,10 @@ const splitDef=v=>{const [a,u]=(v||'1 pcs').split(' ');return {amt:parseAmt(a),u
 Object.entries(SEED_ITEMS).forEach(([cat,s])=>s.split(';').forEach(p=>{const [da,en]=p.split('=');const id=keyOf(da);seedItems[id]={id,da,en:en||'',cat,n:0,at:0,...splitDef(defMap[da]||SEED_CATDEF[cat])}}));
 
 // ---------- state ----------
-let listCode=load('cl_code',''),items=load('cl_items',[]),todos=load('cl_todos',[]),dishes=load('cl_dishes',[]),meta=load('cl_meta',{}),shared=load('cl_shared',{}),customCats=load('cl_cats',{}),db=null,unsubs=[],online=navigator.onLine,pend={},dlgState=null;
+let listCode=load('cl_code',''),items=load('cl_items',[]),todos=load('cl_todos',[]),me=load('cl_me',''),ptodos=load('cl_ptodos',[]),pmeta=load('cl_pmeta',{}),dishes=load('cl_dishes',[]),meta=load('cl_meta',{}),shared=load('cl_shared',{}),customCats=load('cl_cats',{}),db=null,unsubs=[],online=navigator.onLine,pend={},dlgState=null;
 const hasCfg=()=>typeof firebase!=='undefined'&&typeof FIREBASE_CONFIG!=='undefined'&&FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey&&!/YOUR_/.test(FIREBASE_CONFIG.apiKey);
-const col=n=>db.collection('lists').doc(listCode).collection(n);
+const colIn=(code,n)=>db.collection('lists').doc(code).collection(n);
+const col=n=>colIn(listCode,n);
 
 // the item database = built-in + whatever this list has added/used (shared entries win)
 const entries=()=>{const o={};for(const k of new Set([...Object.keys(seedItems),...Object.keys(shared)]))o[k]={...seedItems[k],...shared[k]};return o};
@@ -380,8 +413,8 @@ function connect(){
     db=fb.firestore();
   }
   const bad=err=>{console.error(err);$('#sync').textContent='sync error';$('#dot').className='dot'};
-  const watch=(name,apply)=>unsubs.push(col(name).onSnapshot({includeMetadataChanges:true},q=>{
-    pend[name]=q.metadata.hasPendingWrites;
+  const watch=(name,apply,code=listCode)=>unsubs.push(colIn(code,name).onSnapshot({includeMetadataChanges:true},q=>{
+    pend[(code===listCode?'':'p_')+name]=q.metadata.hasPendingWrites;
     apply(q.docs.map(d=>d.data()));setSync();render();
   },bad));
   watch('items',l=>{items=l;save('cl_items',items)});
@@ -390,6 +423,11 @@ function connect(){
   watch('meta',l=>{meta={};l.forEach(v=>meta[v.id]=v);save('cl_meta',meta)});
   watch('catalog',l=>{shared={};l.forEach(v=>{shared[v.id]=v.da?v:{...v,da:v.name||v.id,en:''}});save('cl_shared',shared)});
   watch('cats',l=>{customCats={};l.forEach(v=>customCats[v.id]=v);save('cl_cats',customCats)});
+  // private to-do lists live under this phone's own code, which is never shared
+  if(me&&me!==listCode){
+    watch('todos',l=>{ptodos=l;save('cl_ptodos',ptodos)},me);
+    watch('meta',l=>{pmeta={};l.forEach(v=>pmeta[v.id]=v);save('cl_pmeta',pmeta)},me);
+  }
 }
 function setSync(){
   if(!hasCfg()||!listCode){$('#sync').textContent='local only';$('#dot').className='dot';return}
@@ -403,6 +441,8 @@ addEventListener('offline',()=>{online=false;setSync()});
 // ---------- data ops (optimistic locally; Firestore queues writes when offline) ----------
 const put=(name,doc)=>{if(db)col(name).doc(doc.id).set(doc).catch(console.error)};
 const del=(name,id)=>{if(db)col(name).doc(id).delete().catch(console.error)};
+const putP=(name,doc)=>{if(db&&me)colIn(me,name).doc(doc.id).set(doc).catch(console.error)};
+const delP=(name,id)=>{if(db&&me)colIn(me,name).doc(id).delete().catch(console.error)};
 function putItem(it){
   const i=items.findIndex(x=>x.id===it.id);
   if(i<0)items.push(it);else items[i]=it;
@@ -815,24 +855,47 @@ $('#ppGo').onclick=()=>{
   setTimeout(()=>$('#dsHint').textContent='',6000);
 };
 
-// ---------- to-dos: one shared ordered list; numbered i., ii., … by position; ticked ones sink to "Done" ----------
+// ---------- to-dos: ordered lists; numbered i., ii., … by position; ticked ones sink to "Done" ----------
+// "Home" (id main) is the original shared list: its to-dos have no list field. Extra lists are described by
+// meta docs "tl_<id>" {id,kind:'tl',name,emoji,ts}: shared ones under the list code (lists/{code}/meta + todos),
+// private ones under this phone's own code (lists/{me}/meta + todos), which only this phone knows.
 const TODO_MAX=50;
+const TL_EMO=['📝','🚲','🔧','🏠','🛒','💼','🎁','✈️','🏋️','📚','🌱','💡'];
+const tlMain=()=>({id:'main',name:'Home',emoji:'🏠',priv:false,...(meta.tl_main?{name:meta.tl_main.name,emoji:meta.tl_main.emoji}:{})});
+function tlAll(){
+  const sh=Object.values(meta).filter(v=>v.kind==='tl'&&v.id!=='tl_main').map(v=>({...v,priv:false}));
+  const pr=me?Object.values(pmeta).filter(v=>v.kind==='tl').map(v=>({...v,priv:true})):[];
+  return [tlMain(),...[...sh,...pr].sort((a,b)=>(a.ts||0)-(b.ts||0))];
+}
+let curTL=load('cl_tdlist','main');
+const tlCur=()=>tlAll().find(l=>l.id===curTL)||tlMain();
+const tlOf=id=>tlAll().find(l=>l.id===(id||'main'));
+const tlView=()=>{const l=tlCur();return (l.priv?ptodos:todos).filter(t=>(t.list||'main')===l.id)};
 const roman=n=>{let s='';for(const [v,r] of [[1000,'m'],[900,'cm'],[500,'d'],[400,'cd'],[100,'c'],[90,'xc'],[50,'l'],[40,'xl'],[10,'x'],[9,'ix'],[5,'v'],[4,'iv'],[1,'i']])while(n>=v){s+=r;n-=v}return s};
-const todoById=id=>todos.find(t=>t.id===id);
-const todoOpen=()=>todos.filter(t=>!t.done).sort((a,b)=>(a.order||0)-(b.order||0)||(a.ts||0)-(b.ts||0)||(a.id<b.id?-1:1));
+const todoById=id=>todos.find(t=>t.id===id)||ptodos.find(t=>t.id===id);
+const todoOpen=()=>tlView().filter(t=>!t.done).sort((a,b)=>(a.order||0)-(b.order||0)||(a.ts||0)-(b.ts||0)||(a.id<b.id?-1:1));
 let tdEditing=null,tdDirty=false,drag=null,hold=null,suppressClickUntil=0;
-function putTodo(t){const i=todos.findIndex(x=>x.id===t.id);if(i<0)todos.push(t);else todos[i]=t;save('cl_todos',todos);renderTodos();put('todos',t)}
-function removeTodo(id){todos=todos.filter(x=>x.id!==id);save('cl_todos',todos);renderTodos();del('todos',id)}
+function putTodo(t){
+  const l=tlOf(t.list);if(!l)return;
+  if(l.priv){const i=ptodos.findIndex(x=>x.id===t.id);if(i<0)ptodos.push(t);else ptodos[i]=t;save('cl_ptodos',ptodos);renderTodos();putP('todos',t)}
+  else{const i=todos.findIndex(x=>x.id===t.id);if(i<0)todos.push(t);else todos[i]=t;save('cl_todos',todos);renderTodos();put('todos',t)}
+}
+function removeTodo(id){
+  if(ptodos.some(x=>x.id===id)){ptodos=ptodos.filter(x=>x.id!==id);save('cl_ptodos',ptodos);renderTodos();delP('todos',id)}
+  else{todos=todos.filter(x=>x.id!==id);save('cl_todos',todos);renderTodos();del('todos',id)}
+}
 function addTodo(text){
   text=text.trim();if(!text||todoOpen().length>=TODO_MAX)return false;
-  putTodo({id:uid(),text,done:false,order:todos.reduce((m,t)=>Math.max(m,t.order||0),0)+1000,ts:Date.now()});
+  const l=tlCur();
+  putTodo({id:uid(),text,done:false,order:tlView().reduce((m,t)=>Math.max(m,t.order||0),0)+1000,ts:Date.now(),...(l.id==='main'?{}:{list:l.id})});
   return true;
 }
 function renderTodos(){
   if(!listCode)return;
   if(drag||tdEditing){tdDirty=true;return}   // never rebuild the DOM under a finger or a cursor
   tdDirty=false;
-  const open=todoOpen(),done=todos.filter(t=>t.done).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  drawTL();
+  const open=todoOpen(),done=tlView().filter(t=>t.done).sort((a,b)=>(b.ts||0)-(a.ts||0));
   const w=Math.max(1,...open.map((_,i)=>roman(i+1).length));
   $('#tdOpen').style.setProperty('--rw',(w*.55+.6)+'em');
   $('#tdOpen').innerHTML=open.length?open.map((t,i)=>`<div class="td" data-id="${esc(t.id)}"><button class="tchk" data-xt="${esc(t.id)}" aria-label="Done"></button><span class="rn">${roman(i+1)}.</span><div class="tdt" data-xe="${esc(t.id)}">${esc(t.text)}</div><button class="x" data-xd="${esc(t.id)}" aria-label="Delete">✕</button></div>`).join(''):'<div class="empty">Nothing to do 🎉<br>Add a to-do above.</div>';
@@ -847,7 +910,63 @@ function renderTodos(){
   $('#cntT').textContent=open.length||'';
 }
 $('#tdForm').onsubmit=e=>{e.preventDefault();const i=$('#tdNew');if(addTodo(i.value))i.value='';i.focus()};
-$('#tdClear').onclick=()=>{const d=todos.filter(t=>t.done);if(d.length&&confirm(`Remove ${d.length} done to-do${d.length>1?'s':''}?`))d.forEach(t=>removeTodo(t.id))};
+$('#tdClear').onclick=()=>{const d=tlView().filter(t=>t.done);if(d.length&&confirm(`Remove ${d.length} done to-do${d.length>1?'s':''}?`))d.forEach(t=>removeTodo(t.id))};
+
+// list chips: tap to switch, tap the current one to edit it, ＋ to make a new list
+function drawTL(){
+  const ls=tlAll();if(!ls.some(l=>l.id===curTL)){curTL='main';save('cl_tdlist',curTL)}
+  $('#tlChips').innerHTML=ls.map(l=>`<button type="button" class="chip${l.id===curTL?' on':''}" data-tl="${esc(l.id)}">${esc(l.emoji||'📝')} ${esc(l.name)}${l.priv?' 🔒':''}</button>`).join('')+`<button type="button" class="chip add" data-tl="+">＋ New list</button>`;
+  const c=tlCur();$('#tdTitle').textContent=c.id==='main'?'To do':`${c.name}${c.priv?' 🔒':''}`;
+}
+let tl=null; // dialog state {id|null, name, emoji, priv}
+function tlOpen(l){
+  tl=l?{id:l.id,emoji:l.emoji||'📝',priv:l.priv}:{id:null,emoji:'📝',priv:true};
+  $('#tlHead').textContent=l?'Edit list':'New list';$('#tlName').value=l?l.name:'';
+  $('#tlKindBox').hidden=!!l;$('#tlDel').hidden=!l||l.id==='main';
+  tlDraw();$('#tlDlg').showModal();$('#tlHead').focus();
+}
+function tlDraw(){
+  $('#tlEmo').innerHTML=TL_EMO.map(e=>`<button type="button" class="chip${e===tl.emoji?' sel':''}" data-te="${e}">${e}</button>`).join('');
+  document.querySelectorAll('#tlDlg [data-tk]').forEach(b=>b.classList.toggle('sel',(b.dataset.tk==='priv')===tl.priv));
+  $('#tlKindHint').textContent=tl.priv?'Stays on your phone\'s private code: other phones on this list never see it.':'Everyone with the list code sees it, like the Home list.';
+}
+$('#tlChips').addEventListener('click',e=>{
+  const b=e.target.closest('[data-tl]');if(!b)return;const id=b.dataset.tl;
+  if(id==='+')return tlOpen(null);
+  if(id===curTL)return tlOpen(tlCur());
+  curTL=id;save('cl_tdlist',curTL);renderTodos();
+});
+$('#tlDlg').addEventListener('click',e=>{
+  const em=e.target.closest('[data-te]'),k=e.target.closest('[data-tk]');
+  if(em){tl.emoji=em.dataset.te;tlDraw()}
+  if(k){tl.priv=k.dataset.tk==='priv';tlDraw()}
+});
+function tlSave(){
+  const name=$('#tlName').value.trim().replace(/\s+/g,' ').slice(0,30);if(!name)return $('#tlName').focus();
+  if(tl.id==='main'){const d={id:'tl_main',kind:'tlmain',name,emoji:tl.emoji};meta.tl_main=d;save('cl_meta',meta);put('meta',d)}
+  else{
+    const old=tl.id&&tlOf(tl.id),priv=old?old.priv:tl.priv;
+    const d={id:tl.id||('tl_'+uid()),kind:'tl',name,emoji:tl.emoji,ts:old?old.ts:Date.now()};
+    if(priv){
+      const first=!me;if(first){me=newCode();save('cl_me',me)}   // first private list: this phone gets its own code
+      pmeta[d.id]=d;save('cl_pmeta',pmeta);putP('meta',d);
+      if(first)connect();
+    }else{meta[d.id]=d;save('cl_meta',meta);put('meta',d)}
+    curTL=d.id;save('cl_tdlist',curTL);
+  }
+  $('#tlDlg').close();renderTodos();
+}
+$('#tlSave').onclick=tlSave;
+$('#tlName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();tlSave()}});
+$('#tlCancel').onclick=()=>$('#tlDlg').close();
+$('#tlDel').onclick=()=>{
+  const l=tlOf(tl.id);if(!l||l.id==='main')return;
+  const mine=(l.priv?ptodos:todos).filter(t=>t.list===l.id);
+  if(!confirm(`Delete "${l.name}"${mine.length?` and its ${mine.length} to-do${mine.length>1?'s':''}`:''}?`))return;
+  mine.forEach(t=>removeTodo(t.id));
+  if(l.priv){delete pmeta[l.id];save('cl_pmeta',pmeta);delP('meta',l.id)}else{delete meta[l.id];save('cl_meta',meta);del('meta',l.id)}
+  curTL='main';save('cl_tdlist',curTL);$('#tlDlg').close();renderTodos();
+};
 
 // tap the text to edit it in place
 function tdEdit(id){
@@ -978,7 +1097,17 @@ function joinList(code){
 $('#create').onclick=()=>joinList(newCode());
 $('#join').onclick=()=>joinList($('#joinCode').value);
 $('#joinCode').addEventListener('keydown',e=>{if(e.key==='Enter')joinList(e.target.value)});
-$('#menu').onclick=()=>{$('#codeShow').textContent=listCode;$('#shareBtn').hidden=!navigator.share;$('#dlg').showModal()};
+function drawMe(){
+  $('#meShow').hidden=!me;$('#meShow').textContent=me;
+  $('#meInfo').textContent=me?'Private lists are stored under this phone\'s own code. Keep it to get them back on a new phone (Restore there). Don\'t share it.':'None yet. Make one in To-dos with ＋ New list → Private.';
+}
+$('#meBtn').onclick=()=>{
+  const v=cleanCode(prompt('Private code from your other phone','')||'');if(!v)return;
+  if(v.length<6||v===listCode)return alert('That doesn\'t look like a private code.');
+  if(me&&me!==v&&!confirm('Switch to that private code? Private lists on this phone stay under the old code '+me+'.'))return;
+  me=v;save('cl_me',me);ptodos=[];pmeta={};save('cl_ptodos',[]);save('cl_pmeta',{});connect();drawMe();renderTodos();
+};
+$('#menu').onclick=()=>{$('#codeShow').textContent=listCode;drawMe();$('#shareBtn').hidden=!navigator.share;$('#dlg').showModal()};
 $('#closeBtn').onclick=()=>$('#dlg').close();
 $('#mgrBtn').onclick=()=>{$('#dlg').close();drawMgr();$('#mgrDlg').showModal()};
 $('#mgrClose').onclick=()=>$('#mgrDlg').close();

@@ -15,6 +15,7 @@ Rules for any Claude chat working on this repo.
 ## Don'ts
 - Keep personal details (Firebase project sharing, names) out of public files like the README.
 - Firestore data lives under `lists/{code}/{items|catalog|cats|todos|dishes|meta}`; don't move it without a migration, or existing lists disappear.
+- Private to-do lists live under each phone's own private code (`localStorage` `cart-log.me`): `lists/{me}/{todos|meta}`. Never write private data under the shared list code, and never show the private code anywhere but the ⋯ menu. Home's to-dos have no `list` field; keep it that way so older data still shows.
 
 ## Address and storage rules
 
