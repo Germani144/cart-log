@@ -1,0 +1,1913 @@
+{
+ "about": "Starter dishes with recipes for 2. Amounts are in each item's standard unit; pantry staples (salt, pepper, oil, flour, sugar, stock, dried spices, soy sauce, mayo, mustard, peanut butter, honey) are left out.",
+ "items": [
+  {
+   "da": "Grydeklar oksekød",
+   "en": "Stewing beef",
+   "cat": "koed",
+   "unit": "g",
+   "amt": 500
+  },
+  {
+   "da": "Portvin",
+   "en": "Port wine",
+   "cat": "drikke",
+   "unit": "bottle",
+   "amt": 1
+  },
+  {
+   "da": "Tærtedej",
+   "en": "Pie dough",
+   "cat": "mejeri",
+   "unit": "pack",
+   "amt": 1
+  },
+  {
+   "da": "Bulgur",
+   "en": "Bulgur",
+   "cat": "kolonial",
+   "unit": "g",
+   "amt": 500
+  },
+  {
+   "da": "Perlecouscous",
+   "en": "Pearl couscous",
+   "cat": "kolonial",
+   "unit": "g",
+   "amt": 500
+  },
+  {
+   "da": "Chorizo",
+   "en": "Chorizo",
+   "cat": "paalaeg",
+   "unit": "pack",
+   "amt": 1
+  },
+  {
+   "da": "Portobellosvampe",
+   "en": "Portobello mushrooms",
+   "cat": "frugt",
+   "unit": "pcs",
+   "amt": 4
+  },
+  {
+   "da": "Risottoris",
+   "en": "Risotto rice",
+   "cat": "kolonial",
+   "unit": "g",
+   "amt": 500
+  },
+  {
+   "da": "Ramennudler",
+   "en": "Ramen noodles",
+   "cat": "kolonial",
+   "unit": "pack",
+   "amt": 1
+  },
+  {
+   "da": "Rispapir",
+   "en": "Rice paper",
+   "cat": "kolonial",
+   "unit": "pack",
+   "amt": 1
+  },
+  {
+   "da": "Risnudler",
+   "en": "Rice noodles",
+   "cat": "kolonial",
+   "unit": "pack",
+   "amt": 1
+  },
+  {
+   "da": "Halloumi",
+   "en": "Halloumi",
+   "cat": "mejeri",
+   "unit": "pack",
+   "amt": 1
+  },
+  {
+   "da": "Rosenkål",
+   "en": "Brussels sprouts",
+   "cat": "frugt",
+   "unit": "g",
+   "amt": 500
+  },
+  {
+   "da": "Panko",
+   "en": "Panko breadcrumbs",
+   "cat": "kolonial",
+   "unit": "pack",
+   "amt": 1
+  },
+  {
+   "da": "Gyoza",
+   "en": "Gyoza dumplings",
+   "cat": "frost",
+   "unit": "pack",
+   "amt": 1
+  },
+  {
+   "da": "Nori",
+   "en": "Nori seaweed",
+   "cat": "kolonial",
+   "unit": "pack",
+   "amt": 1
+  },
+  {
+   "da": "Kimchi",
+   "en": "Kimchi",
+   "cat": "kolonial",
+   "unit": "pack",
+   "amt": 1
+  },
+  {
+   "da": "Perlespelt",
+   "en": "Pearled spelt",
+   "cat": "kolonial",
+   "unit": "g",
+   "amt": 500
+  },
+  {
+   "da": "Varmrøget laks",
+   "en": "Hot-smoked salmon",
+   "cat": "fisk",
+   "unit": "g",
+   "amt": 200
+  },
+  {
+   "da": "Bagels",
+   "en": "Bagels",
+   "cat": "brod",
+   "unit": "pcs",
+   "amt": 4
+  },
+  {
+   "da": "Kyllingekebab",
+   "en": "Chicken kebab",
+   "cat": "koed",
+   "unit": "pack",
+   "amt": 1
+  },
+  {
+   "da": "Kebabkød",
+   "en": "Kebab meat",
+   "cat": "koed",
+   "unit": "pack",
+   "amt": 1
+  }
+ ],
+ "dishes": [
+  {
+   "name": "Beef stew with beer & port",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Grydeklar oksekød",
+     "en": "Stewing beef",
+     "amt": 500,
+     "unit": "g"
+    },
+    {
+     "da": "Løg",
+     "en": "Onions",
+     "amt": 0.15,
+     "unit": "kg"
+    },
+    {
+     "da": "Gulerødder",
+     "en": "Carrots",
+     "amt": 0.3,
+     "unit": "kg"
+    },
+    {
+     "da": "Champignon",
+     "en": "Mushrooms",
+     "amt": 200,
+     "unit": "g"
+    },
+    {
+     "da": "Kartofler",
+     "en": "Potatoes",
+     "amt": 0.6,
+     "unit": "kg"
+    },
+    {
+     "da": "Hvidløg",
+     "en": "Garlic",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Tomatpuré",
+     "en": "Tomato paste",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Øl",
+     "en": "Beer",
+     "amt": 1,
+     "unit": "bottle"
+    },
+    {
+     "da": "Portvin",
+     "en": "Port wine",
+     "amt": 1,
+     "unit": "bottle"
+    }
+   ]
+  },
+  {
+   "name": "Stroganoff",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Oksefilet",
+     "en": "Beef tenderloin",
+     "amt": 400,
+     "unit": "g"
+    },
+    {
+     "da": "Bacon",
+     "en": "Bacon",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Champignon",
+     "en": "Mushrooms",
+     "amt": 250,
+     "unit": "g"
+    },
+    {
+     "da": "Løg",
+     "en": "Onions",
+     "amt": 0.15,
+     "unit": "kg"
+    },
+    {
+     "da": "Tomatpuré",
+     "en": "Tomato paste",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Madlavningsfløde",
+     "en": "Cooking cream",
+     "amt": 2,
+     "unit": "dl"
+    },
+    {
+     "da": "Ris",
+     "en": "Rice",
+     "amt": 0.15,
+     "unit": "kg"
+    }
+   ]
+  },
+  {
+   "name": "Chili con carne",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Hakket oksekød",
+     "en": "Ground beef",
+     "amt": 400,
+     "unit": "g"
+    },
+    {
+     "da": "Løg",
+     "en": "Onions",
+     "amt": 0.15,
+     "unit": "kg"
+    },
+    {
+     "da": "Hvidløg",
+     "en": "Garlic",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Peberfrugt",
+     "en": "Bell pepper",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Chili",
+     "en": "Chili",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Hakkede tomater",
+     "en": "Chopped tomatoes",
+     "amt": 2,
+     "unit": "can"
+    },
+    {
+     "da": "Tomatpuré",
+     "en": "Tomato paste",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Kidneybønner",
+     "en": "Kidney beans",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Ris",
+     "en": "Rice",
+     "amt": 0.15,
+     "unit": "kg"
+    },
+    {
+     "da": "Creme fraiche",
+     "en": "Crème fraîche",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Quiche",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Tærtedej",
+     "en": "Pie dough",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Æg",
+     "en": "Eggs",
+     "amt": 3,
+     "unit": "pcs"
+    },
+    {
+     "da": "Madlavningsfløde",
+     "en": "Cooking cream",
+     "amt": 2,
+     "unit": "dl"
+    },
+    {
+     "da": "Bacon",
+     "en": "Bacon",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Porrer",
+     "en": "Leeks",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Revet ost",
+     "en": "Grated cheese",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Salat",
+     "en": "Lettuce",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Bulgur salad",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Bulgur",
+     "en": "Bulgur",
+     "amt": 150,
+     "unit": "g"
+    },
+    {
+     "da": "Agurk",
+     "en": "Cucumber",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Cherrytomater",
+     "en": "Cherry tomatoes",
+     "amt": 250,
+     "unit": "g"
+    },
+    {
+     "da": "Rødløg",
+     "en": "Red onions",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Persille",
+     "en": "Parsley",
+     "amt": 1,
+     "unit": "bunch"
+    },
+    {
+     "da": "Mynte",
+     "en": "Mint",
+     "amt": 1,
+     "unit": "bunch"
+    },
+    {
+     "da": "Citroner",
+     "en": "Lemons",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Feta",
+     "en": "Feta",
+     "amt": 1,
+     "unit": "pack"
+    }
+   ]
+  },
+  {
+   "name": "Perle couscous with chorizo",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Perlecouscous",
+     "en": "Pearl couscous",
+     "amt": 150,
+     "unit": "g"
+    },
+    {
+     "da": "Chorizo",
+     "en": "Chorizo",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Peberfrugt",
+     "en": "Bell pepper",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Cherrytomater",
+     "en": "Cherry tomatoes",
+     "amt": 200,
+     "unit": "g"
+    },
+    {
+     "da": "Rødløg",
+     "en": "Red onions",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Spinat",
+     "en": "Spinach",
+     "amt": 100,
+     "unit": "g"
+    },
+    {
+     "da": "Feta",
+     "en": "Feta",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Persille",
+     "en": "Parsley",
+     "amt": 1,
+     "unit": "bunch"
+    }
+   ]
+  },
+  {
+   "name": "Broccoli bacon salad",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Broccoli",
+     "en": "Broccoli",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Bacon",
+     "en": "Bacon",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Rødløg",
+     "en": "Red onions",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Græsk yoghurt",
+     "en": "Greek yogurt",
+     "amt": 150,
+     "unit": "g"
+    },
+    {
+     "da": "Rosiner",
+     "en": "Raisins",
+     "amt": 50,
+     "unit": "g"
+    },
+    {
+     "da": "Mandler",
+     "en": "Almonds",
+     "amt": 50,
+     "unit": "g"
+    }
+   ]
+  },
+  {
+   "name": "Tuna salad",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Tun på dåse",
+     "en": "Canned tuna",
+     "amt": 2,
+     "unit": "can"
+    },
+    {
+     "da": "Æg",
+     "en": "Eggs",
+     "amt": 2,
+     "unit": "pcs"
+    },
+    {
+     "da": "Majs på dåse",
+     "en": "Canned corn",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Rødløg",
+     "en": "Red onions",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Agurk",
+     "en": "Cucumber",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Cherrytomater",
+     "en": "Cherry tomatoes",
+     "amt": 200,
+     "unit": "g"
+    },
+    {
+     "da": "Salat",
+     "en": "Lettuce",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Portobello with cheese",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Portobellosvampe",
+     "en": "Portobello mushrooms",
+     "amt": 4,
+     "unit": "pcs"
+    },
+    {
+     "da": "Mozzarella",
+     "en": "Mozzarella",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Spinat",
+     "en": "Spinach",
+     "amt": 100,
+     "unit": "g"
+    },
+    {
+     "da": "Cherrytomater",
+     "en": "Cherry tomatoes",
+     "amt": 150,
+     "unit": "g"
+    },
+    {
+     "da": "Hvidløg",
+     "en": "Garlic",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Rucola",
+     "en": "Arugula",
+     "amt": 50,
+     "unit": "g"
+    }
+   ]
+  },
+  {
+   "name": "Mushroom risotto",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Risottoris",
+     "en": "Risotto rice",
+     "amt": 200,
+     "unit": "g"
+    },
+    {
+     "da": "Champignon",
+     "en": "Mushrooms",
+     "amt": 300,
+     "unit": "g"
+    },
+    {
+     "da": "Løg",
+     "en": "Onions",
+     "amt": 0.1,
+     "unit": "kg"
+    },
+    {
+     "da": "Hvidløg",
+     "en": "Garlic",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Hvidvin",
+     "en": "White wine",
+     "amt": 1,
+     "unit": "bottle"
+    },
+    {
+     "da": "Smør",
+     "en": "Butter",
+     "amt": 50,
+     "unit": "g"
+    },
+    {
+     "da": "Parmesan",
+     "en": "Parmesan",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Ramen",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Ramennudler",
+     "en": "Ramen noodles",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Kyllingebryst",
+     "en": "Chicken breast",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Æg",
+     "en": "Eggs",
+     "amt": 2,
+     "unit": "pcs"
+    },
+    {
+     "da": "Champignon",
+     "en": "Mushrooms",
+     "amt": 150,
+     "unit": "g"
+    },
+    {
+     "da": "Spinat",
+     "en": "Spinach",
+     "amt": 100,
+     "unit": "g"
+    },
+    {
+     "da": "Forårsløg",
+     "en": "Spring onions",
+     "amt": 1,
+     "unit": "bunch"
+    },
+    {
+     "da": "Ingefær",
+     "en": "Ginger",
+     "amt": 30,
+     "unit": "g"
+    },
+    {
+     "da": "Hvidløg",
+     "en": "Garlic",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Rice paper rolls",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Rispapir",
+     "en": "Rice paper",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Risnudler",
+     "en": "Rice noodles",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Rejer",
+     "en": "Shrimp",
+     "amt": 200,
+     "unit": "g"
+    },
+    {
+     "da": "Agurk",
+     "en": "Cucumber",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Gulerødder",
+     "en": "Carrots",
+     "amt": 0.2,
+     "unit": "kg"
+    },
+    {
+     "da": "Avocado",
+     "en": "Avocado",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Salat",
+     "en": "Lettuce",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Mynte",
+     "en": "Mint",
+     "amt": 1,
+     "unit": "bunch"
+    },
+    {
+     "da": "Koriander",
+     "en": "Coriander",
+     "amt": 1,
+     "unit": "bunch"
+    }
+   ]
+  },
+  {
+   "name": "Thai noodles",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Risnudler",
+     "en": "Rice noodles",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Kyllingebryst",
+     "en": "Chicken breast",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Æg",
+     "en": "Eggs",
+     "amt": 2,
+     "unit": "pcs"
+    },
+    {
+     "da": "Peberfrugt",
+     "en": "Bell pepper",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Gulerødder",
+     "en": "Carrots",
+     "amt": 0.2,
+     "unit": "kg"
+    },
+    {
+     "da": "Forårsløg",
+     "en": "Spring onions",
+     "amt": 1,
+     "unit": "bunch"
+    },
+    {
+     "da": "Limefrugter",
+     "en": "Limes",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Koriander",
+     "en": "Coriander",
+     "amt": 1,
+     "unit": "bunch"
+    },
+    {
+     "da": "Nødder",
+     "en": "Nuts",
+     "amt": 50,
+     "unit": "g"
+    }
+   ]
+  },
+  {
+   "name": "Frikadeller",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Hakket svinekød",
+     "en": "Ground pork",
+     "amt": 500,
+     "unit": "g"
+    },
+    {
+     "da": "Løg",
+     "en": "Onions",
+     "amt": 0.1,
+     "unit": "kg"
+    },
+    {
+     "da": "Æg",
+     "en": "Eggs",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Mælk",
+     "en": "Milk",
+     "amt": 0.1,
+     "unit": "l"
+    },
+    {
+     "da": "Kartofler",
+     "en": "Potatoes",
+     "amt": 0.6,
+     "unit": "kg"
+    }
+   ]
+  },
+  {
+   "name": "Halloumideller",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Halloumi",
+     "en": "Halloumi",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Squash",
+     "en": "Zucchini",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Gulerødder",
+     "en": "Carrots",
+     "amt": 0.2,
+     "unit": "kg"
+    },
+    {
+     "da": "Æg",
+     "en": "Eggs",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Græsk yoghurt",
+     "en": "Greek yogurt",
+     "amt": 150,
+     "unit": "g"
+    },
+    {
+     "da": "Salat",
+     "en": "Lettuce",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Blomkål in the oven",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Blomkål",
+     "en": "Cauliflower",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Kikærter",
+     "en": "Chickpeas",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Græsk yoghurt",
+     "en": "Greek yogurt",
+     "amt": 150,
+     "unit": "g"
+    },
+    {
+     "da": "Citroner",
+     "en": "Lemons",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Persille",
+     "en": "Parsley",
+     "amt": 1,
+     "unit": "bunch"
+    }
+   ]
+  },
+  {
+   "name": "Rosenkål and halloumi",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Rosenkål",
+     "en": "Brussels sprouts",
+     "amt": 400,
+     "unit": "g"
+    },
+    {
+     "da": "Halloumi",
+     "en": "Halloumi",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Søde kartofler",
+     "en": "Sweet potatoes",
+     "amt": 400,
+     "unit": "g"
+    },
+    {
+     "da": "Rødløg",
+     "en": "Red onions",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Chicken quesadillas",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Tortillas",
+     "en": "Tortillas",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Kyllingebryst",
+     "en": "Chicken breast",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Revet ost",
+     "en": "Grated cheese",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Peberfrugt",
+     "en": "Bell pepper",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Rødløg",
+     "en": "Red onions",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Majs på dåse",
+     "en": "Canned corn",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Avocado",
+     "en": "Avocado",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Creme fraiche",
+     "en": "Crème fraîche",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Halloumi quesadillas",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Tortillas",
+     "en": "Tortillas",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Halloumi",
+     "en": "Halloumi",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Revet ost",
+     "en": "Grated cheese",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Peberfrugt",
+     "en": "Bell pepper",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Rødløg",
+     "en": "Red onions",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Spinat",
+     "en": "Spinach",
+     "amt": 100,
+     "unit": "g"
+    },
+    {
+     "da": "Creme fraiche",
+     "en": "Crème fraîche",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Halloumi masala",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Halloumi",
+     "en": "Halloumi",
+     "amt": 2,
+     "unit": "pack"
+    },
+    {
+     "da": "Løg",
+     "en": "Onions",
+     "amt": 0.15,
+     "unit": "kg"
+    },
+    {
+     "da": "Hvidløg",
+     "en": "Garlic",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Ingefær",
+     "en": "Ginger",
+     "amt": 20,
+     "unit": "g"
+    },
+    {
+     "da": "Hakkede tomater",
+     "en": "Chopped tomatoes",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Kokosmælk",
+     "en": "Coconut milk",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Spinat",
+     "en": "Spinach",
+     "amt": 100,
+     "unit": "g"
+    },
+    {
+     "da": "Basmatiris",
+     "en": "Basmati rice",
+     "amt": 0.15,
+     "unit": "kg"
+    },
+    {
+     "da": "Koriander",
+     "en": "Coriander",
+     "amt": 1,
+     "unit": "bunch"
+    }
+   ]
+  },
+  {
+   "name": "Enchiladas",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Tortillas",
+     "en": "Tortillas",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Kyllingebryst",
+     "en": "Chicken breast",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Kidneybønner",
+     "en": "Kidney beans",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Majs på dåse",
+     "en": "Canned corn",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Løg",
+     "en": "Onions",
+     "amt": 0.1,
+     "unit": "kg"
+    },
+    {
+     "da": "Peberfrugt",
+     "en": "Bell pepper",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Hakkede tomater",
+     "en": "Chopped tomatoes",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Revet ost",
+     "en": "Grated cheese",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Creme fraiche",
+     "en": "Crème fraîche",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Couscous with mushrooms & halloumi",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Couscous",
+     "en": "Couscous",
+     "amt": 150,
+     "unit": "g"
+    },
+    {
+     "da": "Champignon",
+     "en": "Mushrooms",
+     "amt": 250,
+     "unit": "g"
+    },
+    {
+     "da": "Halloumi",
+     "en": "Halloumi",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Creme fraiche",
+     "en": "Crème fraîche",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Hvidløg",
+     "en": "Garlic",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Spinat",
+     "en": "Spinach",
+     "amt": 100,
+     "unit": "g"
+    }
+   ]
+  },
+  {
+   "name": "Chicken thighs in the oven",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Kyllingelår",
+     "en": "Chicken thighs",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Kartofler",
+     "en": "Potatoes",
+     "amt": 0.6,
+     "unit": "kg"
+    },
+    {
+     "da": "Gulerødder",
+     "en": "Carrots",
+     "amt": 0.3,
+     "unit": "kg"
+    },
+    {
+     "da": "Rødløg",
+     "en": "Red onions",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Hvidløg",
+     "en": "Garlic",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Citroner",
+     "en": "Lemons",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Dahl and sausage",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Linser",
+     "en": "Lentils",
+     "amt": 200,
+     "unit": "g"
+    },
+    {
+     "da": "Kokosmælk",
+     "en": "Coconut milk",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Hakkede tomater",
+     "en": "Chopped tomatoes",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Løg",
+     "en": "Onions",
+     "amt": 0.1,
+     "unit": "kg"
+    },
+    {
+     "da": "Hvidløg",
+     "en": "Garlic",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Ingefær",
+     "en": "Ginger",
+     "amt": 20,
+     "unit": "g"
+    },
+    {
+     "da": "Spinat",
+     "en": "Spinach",
+     "amt": 100,
+     "unit": "g"
+    },
+    {
+     "da": "Pølser",
+     "en": "Sausages",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Basmatiris",
+     "en": "Basmati rice",
+     "amt": 0.15,
+     "unit": "kg"
+    }
+   ]
+  },
+  {
+   "name": "Panko kylling, rodfrugter & coleslaw",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Kyllingebryst",
+     "en": "Chicken breast",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Panko",
+     "en": "Panko breadcrumbs",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Æg",
+     "en": "Eggs",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Kartofler",
+     "en": "Potatoes",
+     "amt": 0.3,
+     "unit": "kg"
+    },
+    {
+     "da": "Søde kartofler",
+     "en": "Sweet potatoes",
+     "amt": 300,
+     "unit": "g"
+    },
+    {
+     "da": "Gulerødder",
+     "en": "Carrots",
+     "amt": 0.3,
+     "unit": "kg"
+    },
+    {
+     "da": "Hvidkål",
+     "en": "White cabbage",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Græsk yoghurt",
+     "en": "Greek yogurt",
+     "amt": 100,
+     "unit": "g"
+    }
+   ]
+  },
+  {
+   "name": "Biksemad",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Kartofler",
+     "en": "Potatoes",
+     "amt": 0.6,
+     "unit": "kg"
+    },
+    {
+     "da": "Løg",
+     "en": "Onions",
+     "amt": 0.15,
+     "unit": "kg"
+    },
+    {
+     "da": "Hamburgerryg",
+     "en": "Cured pork loin",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Æg",
+     "en": "Eggs",
+     "amt": 2,
+     "unit": "pcs"
+    },
+    {
+     "da": "Rødbeder",
+     "en": "Beetroot",
+     "amt": 200,
+     "unit": "g"
+    }
+   ]
+  },
+  {
+   "name": "Moussaka",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Hakket oksekød",
+     "en": "Ground beef",
+     "amt": 400,
+     "unit": "g"
+    },
+    {
+     "da": "Aubergine",
+     "en": "Eggplant",
+     "amt": 2,
+     "unit": "pcs"
+    },
+    {
+     "da": "Kartofler",
+     "en": "Potatoes",
+     "amt": 0.4,
+     "unit": "kg"
+    },
+    {
+     "da": "Løg",
+     "en": "Onions",
+     "amt": 0.1,
+     "unit": "kg"
+    },
+    {
+     "da": "Hvidløg",
+     "en": "Garlic",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Hakkede tomater",
+     "en": "Chopped tomatoes",
+     "amt": 1,
+     "unit": "can"
+    },
+    {
+     "da": "Mælk",
+     "en": "Milk",
+     "amt": 0.4,
+     "unit": "l"
+    },
+    {
+     "da": "Smør",
+     "en": "Butter",
+     "amt": 40,
+     "unit": "g"
+    },
+    {
+     "da": "Parmesan",
+     "en": "Parmesan",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Oven salmon, spinach & mushroom sauce",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Laks",
+     "en": "Salmon",
+     "amt": 300,
+     "unit": "g"
+    },
+    {
+     "da": "Spinat",
+     "en": "Spinach",
+     "amt": 150,
+     "unit": "g"
+    },
+    {
+     "da": "Champignon",
+     "en": "Mushrooms",
+     "amt": 200,
+     "unit": "g"
+    },
+    {
+     "da": "Madlavningsfløde",
+     "en": "Cooking cream",
+     "amt": 2,
+     "unit": "dl"
+    },
+    {
+     "da": "Hvidløg",
+     "en": "Garlic",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Kartofler",
+     "en": "Potatoes",
+     "amt": 0.5,
+     "unit": "kg"
+    },
+    {
+     "da": "Citroner",
+     "en": "Lemons",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Pita halloumi, tabbouleh & hummus",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Pitabrød",
+     "en": "Pita bread",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Halloumi",
+     "en": "Halloumi",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Hummus",
+     "en": "Hummus",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Bulgur",
+     "en": "Bulgur",
+     "amt": 100,
+     "unit": "g"
+    },
+    {
+     "da": "Tomater",
+     "en": "Tomatoes",
+     "amt": 200,
+     "unit": "g"
+    },
+    {
+     "da": "Agurk",
+     "en": "Cucumber",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Rødløg",
+     "en": "Red onions",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Persille",
+     "en": "Parsley",
+     "amt": 1,
+     "unit": "bunch"
+    },
+    {
+     "da": "Mynte",
+     "en": "Mint",
+     "amt": 1,
+     "unit": "bunch"
+    },
+    {
+     "da": "Citroner",
+     "en": "Lemons",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Bibimbap with gyoza",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Ris",
+     "en": "Rice",
+     "amt": 0.2,
+     "unit": "kg"
+    },
+    {
+     "da": "Oksefilet",
+     "en": "Beef tenderloin",
+     "amt": 250,
+     "unit": "g"
+    },
+    {
+     "da": "Gyoza",
+     "en": "Gyoza dumplings",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Æg",
+     "en": "Eggs",
+     "amt": 2,
+     "unit": "pcs"
+    },
+    {
+     "da": "Kimchi",
+     "en": "Kimchi",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Nori",
+     "en": "Nori seaweed",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Gulerødder",
+     "en": "Carrots",
+     "amt": 0.15,
+     "unit": "kg"
+    },
+    {
+     "da": "Spinat",
+     "en": "Spinach",
+     "amt": 100,
+     "unit": "g"
+    },
+    {
+     "da": "Agurk",
+     "en": "Cucumber",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Forårsløg",
+     "en": "Spring onions",
+     "amt": 1,
+     "unit": "bunch"
+    }
+   ]
+  },
+  {
+   "name": "Peanut butter noodles & gyoza",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Nudler",
+     "en": "Noodles",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Gyoza",
+     "en": "Gyoza dumplings",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Gulerødder",
+     "en": "Carrots",
+     "amt": 0.15,
+     "unit": "kg"
+    },
+    {
+     "da": "Agurk",
+     "en": "Cucumber",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Forårsløg",
+     "en": "Spring onions",
+     "amt": 1,
+     "unit": "bunch"
+    },
+    {
+     "da": "Limefrugter",
+     "en": "Limes",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Koriander",
+     "en": "Coriander",
+     "amt": 1,
+     "unit": "bunch"
+    }
+   ]
+  },
+  {
+   "name": "Spelt bowl with hot-smoked salmon",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Perlespelt",
+     "en": "Pearled spelt",
+     "amt": 150,
+     "unit": "g"
+    },
+    {
+     "da": "Varmrøget laks",
+     "en": "Hot-smoked salmon",
+     "amt": 200,
+     "unit": "g"
+    },
+    {
+     "da": "Rødløg",
+     "en": "Red onions",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Tomater",
+     "en": "Tomatoes",
+     "amt": 200,
+     "unit": "g"
+    },
+    {
+     "da": "Agurk",
+     "en": "Cucumber",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Rucola",
+     "en": "Arugula",
+     "amt": 50,
+     "unit": "g"
+    }
+   ]
+  },
+  {
+   "name": "Kylling i karry",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Kyllingebryst",
+     "en": "Chicken breast",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Løg",
+     "en": "Onions",
+     "amt": 0.1,
+     "unit": "kg"
+    },
+    {
+     "da": "Porrer",
+     "en": "Leeks",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Peberfrugt",
+     "en": "Bell pepper",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Æbler",
+     "en": "Apples",
+     "amt": 0.15,
+     "unit": "kg"
+    },
+    {
+     "da": "Madlavningsfløde",
+     "en": "Cooking cream",
+     "amt": 2,
+     "unit": "dl"
+    },
+    {
+     "da": "Ris",
+     "en": "Rice",
+     "amt": 0.15,
+     "unit": "kg"
+    }
+   ]
+  },
+  {
+   "name": "Kylling kebab bagel",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Bagels",
+     "en": "Bagels",
+     "amt": 2,
+     "unit": "pcs"
+    },
+    {
+     "da": "Kyllingekebab",
+     "en": "Chicken kebab",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Hummus",
+     "en": "Hummus",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Salat",
+     "en": "Lettuce",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Tomater",
+     "en": "Tomatoes",
+     "amt": 150,
+     "unit": "g"
+    },
+    {
+     "da": "Rødløg",
+     "en": "Red onions",
+     "amt": 1,
+     "unit": "pcs"
+    }
+   ]
+  },
+  {
+   "name": "Kebab wrap",
+   "serves": 2,
+   "ingredients": [
+    {
+     "da": "Tortillas",
+     "en": "Tortillas",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Kebabkød",
+     "en": "Kebab meat",
+     "amt": 1,
+     "unit": "pack"
+    },
+    {
+     "da": "Salat",
+     "en": "Lettuce",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Tomater",
+     "en": "Tomatoes",
+     "amt": 150,
+     "unit": "g"
+    },
+    {
+     "da": "Agurk",
+     "en": "Cucumber",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Rødløg",
+     "en": "Red onions",
+     "amt": 1,
+     "unit": "pcs"
+    },
+    {
+     "da": "Græsk yoghurt",
+     "en": "Greek yogurt",
+     "amt": 150,
+     "unit": "g"
+    }
+   ]
+  }
+ ]
+}

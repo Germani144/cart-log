@@ -25,6 +25,7 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 - Tap a dish to open its recipe: name, ingredients, and how many people the amounts are for (default 2). ✕ on the row deletes the dish.
 - Ingredients come from the same item database as the grocery list (same search, æ/ø/å-proof). Pick one and its unit is filled in from the database and fixed; you only type the amount (e.g. 500 g, 1 l, 10 pcs). Typing `500 g mel` when flour is stored in kg gives 0,5 kg.
 - An ingredient that isn't in the database yet gets a unit picker once; on Save it's added to the database under Andet / Other (it doesn't show up as a grocery suggestion until it's been bought).
+- **Starter dishes:** ⋯ → *Add starter dishes with recipes* adds 35 everyday dishes (stews, quesadillas, halloumi dishes, noodle bowls…) with recipes for 2 from `dishes-pack.json`. Dishes the list already has (same name) are skipped, and missing ingredients (halloumi, chorizo, gyoza…) are added to the item database; nothing already saved is changed, so it's safe to tap again. Pantry staples (salt, pepper, oil, flour, sugar, stock, dried spices, soy sauce, mayo, mustard, peanut butter, honey) are left out of the recipes on purpose.
 - **Add to grocery list** asks for how many people, shows the scaled amounts, and puts every ingredient on the list. Countable units (pcs, pack, can…) round up. If an ingredient is already on the list, its amount is topped up (g↔kg and ml↔dl↔l are converted); if the units can't be combined, it's left as is and named in the message.
 
 **General**
@@ -49,6 +50,7 @@ Plain static files, no build step, no framework.
 |---|---|
 | `index.html` | The whole app: markup, styles and logic |
 | `seed.js` | Built-in bilingual item database and categories |
+| `dishes-pack.json` | Starter dishes with recipes, loaded by the *Add starter dishes* button |
 | `firebase-config.js` | Firebase web config for the project |
 | `sw.js` | Service worker: caches the app for offline use (cache name `cart-log-X.Y` matches the app version) |
 | `manifest.json` | Install name, icons and colours; `scope` and `start_url` are `./`, so the installed app covers only `/cart-log/`, not the whole site. Not linked on iPhone/iPad, so Safari's "Add to Home Screen" starts the app at the current address (with the list code); iOS takes name, icon and full-screen mode from the `apple-*` tags instead |
