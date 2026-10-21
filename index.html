@@ -144,8 +144,10 @@ dialog button.wide{width:100%;margin-top:8px}
 .hdb{flex:none;width:48px;padding:0;font:700 18px Georgia,'Times New Roman',serif;background:var(--card);color:var(--mu);border:1px solid var(--bd)}
 .hdb[aria-pressed="true"]{background:var(--td);color:var(--tdt);border-color:var(--td)}
 #tdNew.hdm{font-weight:700}
-.td.hd{background:color-mix(in srgb,var(--td) 20%,transparent);padding-left:14px}
-.td.hd .tdt{font-weight:700;font-size:15px;letter-spacing:.01em}
+.td.hd{background:color-mix(in srgb,var(--td) 26%,var(--card));padding:12px 6px 10px 12px;box-shadow:inset 4px 0 0 var(--td)}
+.td.hd .tdt{font-weight:800;font-size:19px;line-height:1.25;letter-spacing:.005em;padding:2px 0}
+.td.hd .hdn{flex:none;font-size:13px;font-weight:600;color:var(--td);display:none}
+.td.hd.lift .hdn{display:inline}
 .td.hd:not(:first-child){border-top:6px solid var(--card)}
 .td.lift{z-index:5;background:var(--card);box-shadow:inset 0 0 0 2px var(--td)}
 body.dragging{cursor:grabbing}
@@ -177,7 +179,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.3</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.4</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -670,7 +672,7 @@ document.addEventListener('click',e=>{
   else if(D.cc!==undefined){dlgState.sel=D.cc;dlgState.newCat=null;dlgState.colorTouched=false;dlgState.catColor=customCats[D.cc]?safeColor(customCats[D.cc].color):null;$('#cdNewDa').value='';$('#cdNewEn').value='';$('#cdHint').textContent='';drawCats()}
   else if(D.sw){dlgState.catColor=D.sw;dlgState.colorTouched=true;drawColors()}
   else if(D.xt){if(Date.now()<suppressClickUntil)return;const t=todoById(D.xt);if(t)putTodo({...t,done:!t.done,ts:Date.now()})}
-  else if(D.xd){if(Date.now()<suppressClickUntil)return;removeTodo(D.xd)}
+  else if(D.xd){if(Date.now()<suppressClickUntil)return;const t=todoById(D.xd);if(t&&t.head&&!confirm(`Delete the heading "${t.text}"? Its to-dos stay in the list.`))return;removeTodo(D.xd)}
   else if(D.xe){if(Date.now()<suppressClickUntil)return;tdEdit(D.xe)}
   else if(D.md){delShared(D.md);drawMgr();render()}
   else if(D.mc){delCat(D.mc);drawMgr();render()}
@@ -908,7 +910,7 @@ function renderTodos(){
   const open=todoOpen(),done=tlView().filter(t=>t.done).sort((a,b)=>(b.ts||0)-(a.ts||0));
   const nItems=open.filter(isItem).length;
   $('#tdOpen').innerHTML=open.length?open.map(t=>t.head
-    ?`<div class="td hd" data-id="${esc(t.id)}"><div class="tdt" data-xe="${esc(t.id)}">${esc(t.text)}</div><button class="x" data-xd="${esc(t.id)}" aria-label="Delete heading">✕</button></div>`
+    ?`<div class="td hd" data-id="${esc(t.id)}"><div class="tdt" data-xe="${esc(t.id)}">${esc(t.text)}</div><span class="hdn"></span><button class="x" data-xd="${esc(t.id)}" aria-label="Delete heading">✕</button></div>`
     :`<div class="td" data-id="${esc(t.id)}"><button class="tchk" data-xt="${esc(t.id)}" aria-label="Done"></button><span class="rn">•</span><div class="tdt" data-xe="${esc(t.id)}">${esc(t.text)}</div><button class="x" data-xd="${esc(t.id)}" aria-label="Delete">✕</button></div>`).join(''):'<div class="empty">Nothing to do 🎉<br>Add a to-do above.</div>';
   $('#tdN').textContent=nItems?` · ${nItems}`:'';
   $('#tdTip').textContent=open.length>1?'hold & drag to reorder':'';
@@ -1030,9 +1032,16 @@ function tdPress(el,x,y,touch){
   hold=h;
 }
 function tdPressCancel(){if(hold){clearTimeout(hold.timer);hold=null}}
+// a heading carries its section (the rows after it, up to the next heading): they fold away while dragging,
+// the heading moves past whole sections, and the rows unfold under it when dropped
+const isHd=n=>n&&n.classList.contains('hd');
 function tdBegin(el,y){
   if(tdEditing||!el.isConnected)return;
-  drag={el,id:el.dataset.id,startY:y+scrollY,cy:y,raf:0};
+  const group=[];
+  if(isHd(el)){for(let n=el.nextElementSibling;n&&!isHd(n);n=n.nextElementSibling)group.push(n)}
+  group.forEach(n=>n.style.display='none');
+  if(group.length)el.querySelector('.hdn').textContent=`+${group.length} to-do${group.length>1?'s':''}`;
+  drag={el,id:el.dataset.id,startY:y+scrollY,cy:y,raf:0,group};
   el.classList.add('lift');document.body.classList.add('dragging');
   try{navigator.vibrate&&navigator.vibrate(12)}catch{}
   drag.raf=requestAnimationFrame(tdAuto);
@@ -1042,8 +1051,26 @@ function tdFlip(n,mut){
   n.style.transition='none';n.style.transform=`translateY(${a-b}px)`;void n.offsetHeight;
   n.style.transition='transform .16s ease';n.style.transform='';
 }
+// the block next to the dragged heading: a whole section (heading + rows), or loose rows above the first heading
+function blockAfter(el){const last=drag.group.length?drag.group[drag.group.length-1]:el;const f=last.nextElementSibling;if(!f)return null;const b=[f];for(let n=f.nextElementSibling;n&&!isHd(n);n=n.nextElementSibling)b.push(n);return b}
+// loose rows above the first heading stay on top: a section never moves above them
+function blockBefore(el){const b=[];for(let n=el.previousElementSibling;n;n=n.previousElementSibling){b.unshift(n);if(isHd(n))return b}return null}
+const blockMid=b=>{const t=b[0].offsetTop,l=b[b.length-1];return (t+l.offsetTop+l.offsetHeight)/2};
+const blockH=b=>{const l=b[b.length-1];return l.offsetTop+l.offsetHeight-b[0].offsetTop};
+function tdApplySection(){
+  const d=drag,el=d.el;
+  for(let g=0;g<60;g++){
+    const c=el.offsetTop+el.offsetHeight/2+(d.cy+scrollY-d.startY);
+    const nb=blockAfter(el),pb=blockBefore(el);
+    if(nb&&c>blockMid(nb)){const h=blockH(nb);const ref=el;nb.forEach(n=>tdFlip(n,()=>lst.insertBefore(n,ref)));d.startY+=h;continue}
+    if(pb&&c<blockMid(pb)){const h=blockH(pb);const after=(d.group.length?d.group[d.group.length-1]:el).nextSibling;pb.forEach(n=>tdFlip(n,()=>lst.insertBefore(n,after)));d.startY-=h;continue}
+    break;
+  }
+  el.style.transform=`translateY(${d.cy+scrollY-d.startY}px)`;
+}
 function tdApply(){
   const d=drag;if(!d)return;const el=d.el;
+  if(isHd(el))return tdApplySection();
   for(let g=0;g<60;g++){
     const c=el.offsetTop+el.offsetHeight/2+(d.cy+scrollY-d.startY);
     const nx=el.nextElementSibling,pv=el.previousElementSibling;
@@ -1065,7 +1092,23 @@ function tdEnd(){
   const d=drag;if(!d)return;drag=null;cancelAnimationFrame(d.raf);
   suppressClickUntil=Date.now()+200;
   d.el.classList.remove('lift');document.body.classList.remove('dragging');d.el.style.transform='';
+  if(isHd(d.el)){
+    let ref=d.el.nextSibling;d.group.forEach(n=>{lst.insertBefore(n,ref);n.style.display=''});   // unfold under the heading
+    return tdCommitSection([d.id,...d.group.map(n=>n.dataset.id)],[...lst.children].map(r=>r.dataset.id));
+  }
   tdCommit(d.id,[...lst.children].map(r=>r.dataset.id));
+}
+// a moved section: the heading and its rows get evenly spaced orders between the new neighbours (in their order)
+function tdCommitSection(sec,ids){
+  const i=ids.indexOf(sec[0]),j=i+sec.length-1;if(i<0)return renderTodos();
+  const p=i>0?todoById(ids[i-1]):null,n=j<ids.length-1?todoById(ids[j+1]):null;
+  const a=p?p.order:null,b=n?n.order:null,cur=sec.map(todoById);
+  if(cur.some(x=>!x))return renderTodos();
+  const inPlace=cur.every((x,k)=>(k===0?(a==null||a<x.order):cur[k-1].order<x.order))&&(b==null||cur[cur.length-1].order<b);
+  if(inPlace)return renderTodos();
+  if(a!=null&&b!=null&&(b-a)/(sec.length+1)<1e-6){ids.forEach((x,k)=>{const q=todoById(x);if(q&&q.order!==(k+1)*1000)putTodo({...q,order:(k+1)*1000})});return}
+  const start=a==null?(b==null?0:b-1000*(sec.length+1)):a,step=a==null||b==null?1000:(b-a)/(sec.length+1);
+  cur.forEach((x,k)=>putTodo({...x,order:start+step*(k+1)}));
 }
 // only the moved row gets a new order value (halfway between its new neighbours), so two phones editing at once don't clash
 function tdCommit(id,ids){
