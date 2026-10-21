@@ -20,8 +20,8 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 - A plain ordered list numbered i., ii., iii. … up to l. (50 open items).
 - Hold and drag to reorder; tick to move an item to Done (struck through, faded).
 
-**Dishes**
-- A shared, alphabetical list of saved dishes (e.g. Lasagne, Chili sin carne). Add one by name; adding a name that's already saved just says so.
+**Recipes**
+- A shared, alphabetical list of saved dishes under a title you can rename (tap the heading; the name is shared by everyone on the list) (e.g. Lasagne, Chili sin carne). Add one by name; adding a name that's already saved just says so.
 - Tap a dish to open its recipe: name, ingredients, and how many people the amounts are for (default 2). ✕ on the row deletes the dish.
 - Ingredients come from the same item database as the grocery list (same search, æ/ø/å-proof). Pick one and its unit is filled in from the database and fixed; you only type the amount (e.g. 500 g, 1 l, 10 pcs). Typing `500 g mel` when flour is stored in kg gives 0,5 kg.
 - An ingredient that isn't in the database yet gets a unit picker once; on Save it's added to the database under Andet / Other (it doesn't show up as a grocery suggestion until it's been bought).
@@ -29,7 +29,7 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 - **Add to grocery list** asks for how many people, shows the scaled amounts, and puts every ingredient on the list. Countable units (pcs, pack, can…) round up. If an ingredient is already on the list, its amount is topped up (g↔kg and ml↔dl↔l are converted); if the units can't be combined, it's left as is and named in the message.
 
 **General**
-- Three tabs (Groceries, To-dos, Dishes); swipe left or right to switch, with live feedback while dragging. On narrow phones the tab icons sit above the labels and counts show as small badges.
+- Three tabs (Groceries, To-dos, Recipes); swipe left or right to switch, with live feedback while dragging. On narrow phones the tab icons sit above the labels and counts show as small badges.
 - Share a list with its 8-character code or invite link (`?list=CODE`). Anyone with the code can see and edit it.
 - Opening an invite link joins the list straight away, and the code stays in the address. On iPhone that matters: a home-screen app has its own storage, separate from Safari, so "Add to Home Screen" from that page installs an app that's already in the list. (The installed app only uses that code if it has no list yet, so leaving or switching lists in the app sticks.)
 - Offline-first: changes made without signal sync when the phone is back online.
@@ -78,6 +78,7 @@ lists/{code}/catalog   items added by the household, shared across the list
 lists/{code}/cats      custom categories and their colours
 lists/{code}/todos     to-dos (text, order, done)
 lists/{code}/dishes    saved dishes (name, serves, ingredients: [{cid, da, en, amt, unit}])
+lists/{code}/meta      list settings (doc "dishes": title of the dish list)
 ```
 
 ### Firestore rule
