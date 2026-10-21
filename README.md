@@ -21,6 +21,7 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 - Each new list is either **shared** (everyone with the list code sees it) or **private** (🔒, only this phone). Private lists are stored under the phone's own private code, which is never shared; it's shown in ⋯ → *Your private lists*, and *Restore private lists from another phone* brings them back on a new phone. A private list stays private (it can't be turned into a shared one).
 - Tap the selected list's chip again to rename it, change its icon, or delete it with its to-dos.
 - Each list is an ordered list of bulleted to-dos (up to 50 open). Tap **H** next to the input to add the next entry as a **heading** instead (it switches back after one); headings group to-dos into sections, have no tick box, and can be edited, dragged and deleted like to-dos. The tab badge counts the open to-dos (not headings) of the list you're on.
+- Paste several lines into *Add a to-do…* to add them all at once: lines starting with `-` (or `•`, `*`) become to-dos, other lines become headings, and a bare `-` is skipped. It asks before adding.
 - Hold and drag to reorder; tick to move an item to Done (struck through, faded).
 
 **Recipes**

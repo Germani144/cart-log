@@ -177,7 +177,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.1</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.2</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -924,6 +924,29 @@ var tdHeadMode=false;
 function setHeadMode(on){tdHeadMode=on;$('#tdHeadBtn').setAttribute('aria-pressed',on);$('#tdNew').classList.toggle('hdm',on);renderTodos()}
 $('#tdHeadBtn').addEventListener('pointerdown',e=>e.preventDefault());   // keep the keyboard open
 $('#tdHeadBtn').onclick=()=>{setHeadMode(!tdHeadMode);$('#tdNew').focus()};
+// paste several lines at once: "- text" (or •, *) lines become to-dos, other lines headings; a bare "-" is skipped
+function parseTodoText(txt){
+  const out=[];
+  for(let line of txt.split(/\r?\n/)){
+    line=line.trim();if(!line)continue;
+    const m=/^[-•*–]\s*(.*)$/.exec(line);
+    if(m){const t=m[1].trim();if(t)out.push({text:t,head:false})}
+    else out.push({text:line.replace(/:$/,''),head:true});
+  }
+  return out;
+}
+$('#tdNew').addEventListener('paste',e=>{
+  const txt=(e.clipboardData||window.clipboardData)?.getData('text')||'';
+  if(!/\n/.test(txt.trim()))return;   // single line: normal paste
+  e.preventDefault();
+  const rows=parseTodoText(txt),nh=rows.filter(r=>r.head).length,ni=rows.length-nh;
+  const room=TODO_MAX-todoOpen().filter(isItem).length;
+  if(!rows.length)return;
+  if(ni>room)return alert(`That's ${ni} to-dos, but this list only has room for ${room} more (max ${TODO_MAX} open).`);
+  if(!confirm(`Add ${nh} heading${nh===1?'':'s'} and ${ni} to-do${ni===1?'':'s'} to "${tlCur().name}"?`))return;
+  rows.forEach(r=>addTodo(r.text,r.head));
+  $('#tdNew').value='';setHeadMode(false);
+});
 $('#tdForm').onsubmit=e=>{e.preventDefault();const i=$('#tdNew');if(addTodo(i.value,tdHeadMode)){i.value='';if(tdHeadMode)setHeadMode(false)}i.focus()};
 $('#tdClear').onclick=()=>{const d=tlView().filter(t=>t.done);if(d.length&&confirm(`Remove ${d.length} done to-do${d.length>1?'s':''}?`))d.forEach(t=>removeTodo(t.id))};
 
