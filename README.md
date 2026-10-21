@@ -20,6 +20,7 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 - Several lists, picked with chips at the top of the tab. **Home** is the original shared list (tap it again to rename it or change its icon); **＋ New list** makes another one with a name and icon.
 - Each new list is either **shared** (everyone with the list code sees it) or **private** (🔒, only this phone). Private lists are stored under the phone's own private code, which is never shared; it's shown in ⋯ → *Your private lists*, and *Restore private lists from another phone* brings them back on a new phone. A private list stays private (it can't be turned into a shared one).
 - Tap the selected list's chip again to rename it, change its icon, or delete it with its to-dos.
+- The title on the list card ("To do" for Home, the list's name for others) can be renamed by tapping it; clearing it brings back the default. Shared lists sync the title, private ones keep it private.
 - Each list is an ordered list of bulleted to-dos (up to 50 open). Tap **H** next to the input to add the next entry as a **heading** instead (it switches back after one); headings group to-dos into sections, show bigger and bolder than to-dos, and have no tick box. Hold and drag a heading to move its whole section (its to-dos fold under it while dragging and come along); drag a single to-do to reorder it within a section or move it to another. To-dos above the first heading stay on top. Deleting a heading asks first; its to-dos stay in the list. Tap the ▾ arrow on a heading to fold its section (the heading shows how many items are hidden); folding is per phone and remembered, and adding an item to a folded last section unfolds it. The tab badge counts the open to-dos (not headings) of the list you're on.
 - Paste several lines into *Add an item…* to add them all at once: lines starting with `-` (or `•`, `*`) become to-dos, other lines become headings, and a bare `-` is skipped. It asks before adding.
 - Hold and drag to reorder; tick to move an item to Done (struck through, faded).
@@ -82,8 +83,8 @@ lists/{code}/catalog   items added by the household, shared across the list
 lists/{code}/cats      custom categories and their colours
 lists/{code}/todos     to-dos (text, order, done, head: true for headings, list: absent for Home, else the list's id)
 lists/{code}/dishes    saved dishes (name, serves, ingredients: [{cid, da, en, amt, unit}])
-lists/{code}/meta      list settings: "dishes" (title of the dish list), "tl_main" (Home's name/icon),
-                       "tl_<id>" (each extra shared to-do list: name, emoji)
+lists/{code}/meta      list settings: "dishes" (title of the dish list), "tl_main" (Home's name/icon/card title),
+                       "tl_<id>" (each extra shared to-do list: name, emoji, optional card title)
 lists/{private}/todos  a phone's private to-dos (same shape)
 lists/{private}/meta   its private lists ("tl_<id>")
 ```

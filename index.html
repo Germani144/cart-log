@@ -183,7 +183,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.6</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.7</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -216,7 +216,7 @@ body.dragging{cursor:grabbing}
   </form>
   <div id="tdHint" class="mu" style="margin-top:6px"></div>
   <div class="list tdl" style="--c:var(--td);--t:var(--tdt);margin-top:12px">
-    <div class="gh"><b id="tdTitle">To do</b><span class="en" id="tdN"></span><span class="hint" id="tdTip"></span></div>
+    <div class="gh"><b id="tdTitle" class="dsT" role="button" tabindex="0" title="Tap to rename">To do</b><span class="en" id="tdN"></span><span class="hint" id="tdTip"></span></div>
     <div id="tdOpen" style="position:relative"></div>
   </div>
   <div id="tdDoneCard" class="list tdl" style="--c:#5F6B7A;--t:#fff;margin-top:12px" hidden>
@@ -875,7 +875,7 @@ $('#ppGo').onclick=()=>{
 // private ones under this phone's own code (lists/{me}/meta + todos), which only this phone knows.
 const TODO_MAX=50;
 const TL_EMO=['📝','🚲','🔧','🏠','🛒','💼','🎁','✈️','🏋️','📚','🌱','💡'];
-const tlMain=()=>({id:'main',name:'Home',emoji:'🏠',priv:false,...(meta.tl_main?{name:meta.tl_main.name,emoji:meta.tl_main.emoji}:{})});
+const tlMain=()=>({id:'main',name:'Home',emoji:'🏠',priv:false,...(meta.tl_main?{name:meta.tl_main.name,emoji:meta.tl_main.emoji,title:meta.tl_main.title}:{})});
 function tlAll(){
   const sh=Object.values(meta).filter(v=>v.kind==='tl'&&v.id!=='tl_main').map(v=>({...v,priv:false}));
   const pr=me?Object.values(pmeta).filter(v=>v.kind==='tl').map(v=>({...v,priv:true})):[];
@@ -967,9 +967,22 @@ $('#tdClear').onclick=()=>{const d=tlView().filter(t=>t.done);if(d.length&&confi
 function drawTL(){
   const ls=tlAll();if(!ls.some(l=>l.id===curTL)){curTL='main';save('cl_tdlist',curTL)}
   $('#tlChips').innerHTML=ls.map(l=>`<button type="button" class="chip${l.id===curTL?' on':''}" data-tl="${esc(l.id)}">${esc(l.emoji||'📝')} ${esc(l.name)}${l.priv?' 🔒':''}</button>`).join('')+`<button type="button" class="chip add" data-tl="+">＋ New list</button>`;
-  const c=tlCur();$('#tdTitle').textContent=c.id==='main'?'To do':`${c.name}${c.priv?' 🔒':''}`;
+  const c=tlCur();$('#tdTitle').textContent=tlTitle(c)+(c.priv?' 🔒':'');
 }
 let tl=null; // dialog state {id|null, name, emoji, priv}
+// the title on the list card: its own title if set, else "To do" for Home and the list's name for the others.
+// Tap it to rename; it's stored on the list (shared lists sync it, private ones stay private).
+const tlTitle=l=>l.title||(l.id==='main'?'To do':l.name);
+function renameListTitle(){
+  const l=tlCur(),v=prompt('Title of this list',tlTitle(l));if(v==null)return;
+  const t=v.trim().replace(/\s+/g,' ').slice(0,40);
+  if(l.id==='main'){const d={id:'tl_main',kind:'tlmain',name:l.name,emoji:l.emoji,...(t?{title:t}:{})};meta.tl_main=d;save('cl_meta',meta);put('meta',d)}
+  else{const src=l.priv?pmeta:meta,old=src[l.id];if(!old)return;const {title,...rest}=old;const d={...rest,...(t?{title:t}:{})};src[l.id]=d;
+    if(l.priv){save('cl_pmeta',pmeta);putP('meta',d)}else{save('cl_meta',meta);put('meta',d)}}
+  renderTodos();
+}
+$('#tdTitle').onclick=()=>{if(Date.now()>=suppressClickUntil)renameListTitle()};
+$('#tdTitle').addEventListener('keydown',e=>{if(e.key==='Enter')renameListTitle()});
 function tlOpen(l){
   tl=l?{id:l.id,emoji:l.emoji||'📝',priv:l.priv}:{id:null,emoji:'📝',priv:true};
   $('#tlHead').textContent=l?'Edit list':'New list';$('#tlName').value=l?l.name:'';
@@ -994,10 +1007,10 @@ $('#tlDlg').addEventListener('click',e=>{
 });
 function tlSave(){
   const name=$('#tlName').value.trim().replace(/\s+/g,' ').slice(0,30);if(!name)return $('#tlName').focus();
-  if(tl.id==='main'){const d={id:'tl_main',kind:'tlmain',name,emoji:tl.emoji};meta.tl_main=d;save('cl_meta',meta);put('meta',d)}
+  if(tl.id==='main'){const d={id:'tl_main',kind:'tlmain',name,emoji:tl.emoji,...(tlMain().title?{title:tlMain().title}:{})};meta.tl_main=d;save('cl_meta',meta);put('meta',d)}
   else{
     const old=tl.id&&tlOf(tl.id),priv=old?old.priv:tl.priv;
-    const d={id:tl.id||('tl_'+uid()),kind:'tl',name,emoji:tl.emoji,ts:old?old.ts:Date.now()};
+    const d={id:tl.id||('tl_'+uid()),kind:'tl',name,emoji:tl.emoji,ts:old?old.ts:Date.now(),...(old&&old.title?{title:old.title}:{})};
     if(priv){
       const first=!me;if(first){me=newCode();save('cl_me',me)}   // first private list: this phone gets its own code
       pmeta[d.id]=d;save('cl_pmeta',pmeta);putP('meta',d);
