@@ -165,7 +165,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v2.0</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v2.1</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -214,6 +214,7 @@ body.dragging{cursor:grabbing}
     <div class="gh"><b>Saved dishes</b><span class="en" id="dsN"></span><span class="hint" id="dsTip"></span></div>
     <div id="dsList"></div>
   </div>
+  <button id="packBtn2" class="wide" type="button" style="margin-top:12px" hidden></button>
 </div>
 </div>
 
@@ -673,6 +674,7 @@ function renderDishes(){
   $('#dsList').innerHTML=l.length?l.map(d=>`<div class="ds" data-id="${esc(d.id)}"><div class="tdt" data-de="${esc(d.id)}">${esc(d.name)}<span class="dsub" data-de="${esc(d.id)}">${(d.ingredients||[]).length?`${d.ingredients.length} ingredient${d.ingredients.length>1?'s':''} · for ${d.serves||2}`:'no recipe yet'}</span></div><button class="x" data-dd="${esc(d.id)}" aria-label="Delete">✕</button></div>`).join(''):'<div class="empty">No dishes yet.<br>Add one above, e.g. Lasagne.</div>';
   $('#dsN').textContent=l.length?` · ${l.length}`:'';
   $('#dsTip').textContent=l.length?'tap for recipe':'';
+  if(typeof packHint==='function')packHint();
 }
 $('#dsForm').onsubmit=e=>{
   e.preventDefault();const i=$('#dsNew'),name=i.value.trim().replace(/\s+/g,' ');if(!name)return;
@@ -969,11 +971,17 @@ $('#mgrBtn').onclick=()=>{$('#dlg').close();drawMgr();$('#mgrDlg').showModal()};
 $('#mgrClose').onclick=()=>$('#mgrDlg').close();
 // starter dishes (dishes-pack.json): adds the dishes this list doesn't have yet (by name) and any missing items
 // to the shared database. Safe to run again: nothing already saved is changed.
+var pack=null;
+async function loadPack(){if(!pack)try{pack=await (await fetch('dishes-pack.json',{cache:'no-cache'})).json()}catch{}return pack}
+// in the Dishes tab: a button that says how many starter dishes this list doesn't have yet (hidden when none)
+function packHint(){const b=$('#packBtn2');if(!pack||!listCode){b.hidden=true;return}const n=pack.dishes.filter(d=>!dishByName(d.name)).length;b.hidden=!n;b.textContent=`＋ Add ${n} starter dishes with recipes`}
+loadPack().then(packHint);
+$('#packBtn2').onclick=()=>$('#packBtn').onclick();
 $('#packBtn').onclick=async()=>{
-  let pack;try{pack=await (await fetch('dishes-pack.json',{cache:'no-cache'})).json()}catch{return alert('Couldn\'t load the starter dishes. Check the connection and try again.')}
+  if(!await loadPack())return alert('Couldn\'t load the starter dishes. Check the connection and try again.');
   const todo=pack.dishes.filter(d=>!dishByName(d.name));
   if(!todo.length)return alert('All starter dishes are already in this list.');
-  if(!confirm(`Add ${todo.length} dishes with recipes (for 2) to this list?`))return;
+  if(!confirm(`Add ${todo.length} dishes with recipes (for 2) to this list? Dishes you already have are kept as they are.`))return;
   for(const it of pack.items){const cid=keyOf(it.da);if(!entries()[cid])upsertShared({id:cid,da:it.da,en:it.en,cat:it.cat,amt:it.amt,unit:it.unit,n:0,at:Date.now()})}
   todo.forEach((d,i)=>putDish({id:uid(),name:d.name,serves:d.serves||2,ts:Date.now()+i,ingredients:d.ingredients.map(g=>{
     const cid=keyOf(g.da),e=entries()[cid],u=e?entryDef(e).unit:g.unit,c=conv(g.amt,g.unit,u);

@@ -1,7 +1,7 @@
 // Home log service worker. All apps on germani144.github.io share one CacheStorage,
 // so this worker only ever touches caches named PREFIX* and only handles its own URLs.
 const PREFIX='cart-log-';
-const CACHE=PREFIX+'2.0'; // keep in step with the version label in index.html
+const CACHE=PREFIX+'2.1'; // keep in step with the version label in index.html
 // caches this app used before the prefix existed; safe to remove, nothing else uses these names
 const LEGACY=/^cart-(v\d+|\d+\.\d+)$/;
 const SCOPE=self.registration.scope; // e.g. https://germani144.github.io/cart-log/
