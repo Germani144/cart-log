@@ -23,6 +23,7 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 **General**
 - Swipe left or right to switch tabs, with live feedback while dragging.
 - Share a list with its 8-character code or invite link (`?list=CODE`). Anyone with the code can see and edit it.
+- Opening an invite link joins the list straight away, and the code stays in the address. On iPhone that matters: a home-screen app has its own storage, separate from Safari, so "Add to Home Screen" from that page installs an app that's already in the list. (The installed app only uses that code if it has no list yet, so leaving or switching lists in the app sticks.)
 - Offline-first: changes made without signal sync when the phone is back online.
 - Updates install themselves; the app reloads once when a new version is available.
 - The version (e.g. v1.0) shows next to the title, so you can tell which build a phone is running.
@@ -42,7 +43,7 @@ Plain static files, no build step, no framework.
 | `seed.js` | Built-in bilingual item database and categories |
 | `firebase-config.js` | Firebase web config for the project |
 | `sw.js` | Service worker: caches the app for offline use (cache name `cart-log-X.Y` matches the app version) |
-| `manifest.json` | Install name, icons and colours; `scope` and `start_url` are `./`, so the installed app covers only `/cart-log/`, not the whole site |
+| `manifest.json` | Install name, icons and colours; `scope` and `start_url` are `./`, so the installed app covers only `/cart-log/`, not the whole site. Not linked on iPhone/iPad, so Safari's "Add to Home Screen" starts the app at the current address (with the list code); iOS takes name, icon and full-screen mode from the `apple-*` tags instead |
 | `icon-*.png` | App icons |
 
 Hosting is GitHub Pages from `main`. Sync is Firebase Cloud Firestore (free Spark plan) with offline persistence.

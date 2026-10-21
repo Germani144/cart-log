@@ -5,7 +5,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Home log">
 <meta name="theme-color" content="#0f172a">
-<link rel="manifest" href="manifest.json">
+<script>
+// iPhone/iPad: no manifest. Then "Add to Home Screen" starts the app at the page's current address,
+// which carries ?list=CODE, so the home-screen app joins the list by itself (its storage is separate from Safari's).
+// Android and desktop keep the normal manifest (its id must never change).
+(function(){var ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+if(!ios){var l=document.createElement('link');l.rel='manifest';l.href='manifest.json';document.head.appendChild(l)}})();
+</script>
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <title>Home log</title>
@@ -132,7 +138,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v1.5</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v1.6</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -705,11 +711,14 @@ document.addEventListener('touchcancel',swReset,{passive:true});
 
 // ---------- list setup / sharing ----------
 const link=()=>location.origin+location.pathname+'?list='+listCode;
+const standalone=()=>navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;
+// in the browser, keep ?list=CODE in the address so adding to the home screen (iPhone) takes the list along
+function keepCodeInUrl(){history.replaceState(null,'',location.pathname+(listCode&&!standalone()?'?list='+listCode:''))}
 function resetLocal(){items=[];todos=[];shared={};customCats={};save('cl_todos',[]);save('cl_items',[]);save('cl_shared',{});save('cl_cats',{})}
 function joinList(code){
   code=cleanCode(code);if(code.length<4)return alert('Enter the list code');
   listCode=code;save('cl_code',code);resetLocal();
-  history.replaceState(null,'',location.pathname);
+  keepCodeInUrl();
   connect();render();
 }
 $('#create').onclick=()=>joinList(newCode());
@@ -723,13 +732,17 @@ $('#shareBtn').onclick=()=>navigator.share({title:'Home log',text:'Join our Home
 $('#copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText(link());$('#copyBtn').textContent='Copied ✓'}catch{prompt('Copy this link',link())}setTimeout(()=>$('#copyBtn').textContent='Copy link',1500)};
 $('#leaveBtn').onclick=()=>{
   if(!confirm('Leave this list on this phone? The list itself stays for whoever else has the code.'))return;
-  unsubs.forEach(u=>u());unsubs=[];listCode='';save('cl_code','');resetLocal();$('#dlg').close();render();
+  save('cl_left',listCode);unsubs.forEach(u=>u());unsubs=[];listCode='';save('cl_code','');resetLocal();keepCodeInUrl();$('#dlg').close();render();
 };
 
 // ---------- boot ----------
 // (older versions stored the shared database under cl_catalog with single-language names; ignore it)
 const q=new URLSearchParams(location.search).get('list');
-if(q&&cleanCode(q)!==listCode){listCode=cleanCode(q);save('cl_code',listCode);resetLocal();history.replaceState(null,'',location.pathname)}
+// a link opened in the browser always wins. The installed app's start address may carry the code it was
+// installed with: use it only if this app has no list yet and wasn't just left (so switching or leaving sticks).
+if(q&&cleanCode(q)!==listCode&&(!standalone()||(!listCode&&cleanCode(q)!==load('cl_left',''))))
+  {listCode=cleanCode(q);save('cl_code',listCode);resetLocal()}
+keepCodeInUrl();
 setTab(tab);render();connect();
 if('serviceWorker' in navigator){
   // a new version takes over -> reload once so the open app is never stuck on old code (not while typing or dragging)

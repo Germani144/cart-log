@@ -3,7 +3,7 @@
 Rules for any Claude chat working on this repo.
 
 ## Scope
-- One chat per app: a chat working on Home log touches only `Germani144/cart-log`. Don't read or push other repos (nap-log, lift-log); tell Pedro to use that app's chat instead.
+- One chat per app: a chat working on Home log touches only `germani144-home/cart-log`. Don't read or push other repos (nap-log, lift-log); tell Pedro to use that app's chat instead.
 - Always fetch and reset to the latest `origin/main` before editing. Another chat may have pushed since you last looked.
 
 ## Every change
@@ -28,6 +28,7 @@ Home log lives at https://germani144-home.github.io/cart-log/ (repo `germani144-
 - **Manifest:** `scope` and `start_url` are `./`. **Never change the manifest `id`**, not even to fix an install problem, unless Pedro explicitly asks for it in that chat. The id is how Android recognises the installed app: changing it orphans the installed copy. If installing fails on the phone, investigate and report; don't change the id.
 - Keep Firebase initialised as the named app `cart-log` (never the default app): Nap Log uses the same Firebase project, and the app name keeps Firestore's offline database and `firestore_…` keys separate if the apps ever share an address again.
 - The manifest `id` is `cart-log-v1`.
+- On iPhone/iPad the manifest is deliberately not linked (script in `<head>`), and in the browser the address keeps `?list=CODE`: that's how the home-screen app, whose storage is separate from Safari's, starts already in the list. Don't strip the code from the URL or link the manifest on iOS.
 
 ## Notes
 - The app reloads itself once when a new service worker takes over, so updates show on the next open. Re-installing is only needed for icon or name changes on the home screen.
