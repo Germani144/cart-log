@@ -1,6 +1,6 @@
 # Home log
 
-A shared grocery list and to-do list for a household, synced live between phones.
+A shared grocery list, to-do list and list of dishes for a household, synced live between phones.
 Works on Android and iPhone as an installable web app, no accounts needed, and keeps working offline.
 
 Live: https://germani144-home.github.io/cart-log/ (the repo kept its original name, `cart-log`). It moved from `germani144.github.io` on 2026-10-20 because Chrome on Android installs only one app per address; after the move, enter the list code once on each phone.
@@ -20,8 +20,13 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 - A plain ordered list numbered i., ii., iii. … up to l. (50 open items).
 - Hold and drag to reorder; tick to move an item to Done (struck through, faded).
 
+**Dishes**
+- A shared, alphabetical list of saved dishes (e.g. Lasagne, Chili sin carne). Add one by name; adding a name that's already saved just says so.
+- Tap a dish to rename or delete it, or tap ✕ to delete it.
+- Groundwork for recipes: every dish is already stored with `serves` (default 2) and an empty `ingredients` list, so recipes can be added later without moving data.
+
 **General**
-- Swipe left or right to switch tabs, with live feedback while dragging.
+- Three tabs (Groceries, To-dos, Dishes); swipe left or right to switch, with live feedback while dragging. On narrow phones the tab icons sit above the labels and counts show as small badges.
 - Share a list with its 8-character code or invite link (`?list=CODE`). Anyone with the code can see and edit it.
 - Opening an invite link joins the list straight away, and the code stays in the address. On iPhone that matters: a home-screen app has its own storage, separate from Safari, so "Add to Home Screen" from that page installs an app that's already in the list. (The installed app only uses that code if it has no list yet, so leaving or switching lists in the app sticks.)
 - Offline-first: changes made without signal sync when the phone is back online.
@@ -67,6 +72,7 @@ lists/{code}/items     grocery items (name, category, amount, unit, done)
 lists/{code}/catalog   items added by the household, shared across the list
 lists/{code}/cats      custom categories and their colours
 lists/{code}/todos     to-dos (text, order, done)
+lists/{code}/dishes    saved dishes (name, serves, ingredients)
 ```
 
 ### Firestore rule

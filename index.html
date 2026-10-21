@@ -16,8 +16,8 @@ if(!ios){var l=document.createElement('link');l.rel='manifest';l.href='manifest.
 <link rel="icon" href="icon-192.png">
 <title>Home log</title>
 <style>
-:root{--bg:#f6f7fb;--card:#fff;--tx:#111827;--mu:#6b7280;--ac:#059669;--bd:#e5e7eb;--dn:#dc2626;--td:#4C51BF;--tdt:#fff}
-@media(prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--tx:#f1f5f9;--mu:#94a3b8;--ac:#34d399;--bd:#334155;--dn:#f87171;--td:#818CF8;--tdt:#0f172a}}
+:root{--bg:#f6f7fb;--card:#fff;--tx:#111827;--mu:#6b7280;--ac:#059669;--bd:#e5e7eb;--dn:#dc2626;--td:#4C51BF;--tdt:#fff;--ds:#C2410C;--dst:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--tx:#f1f5f9;--mu:#94a3b8;--ac:#34d399;--bd:#334155;--dn:#f87171;--td:#818CF8;--tdt:#0f172a;--ds:#FB923C;--dst:#0f172a}}
 *{box-sizing:border-box}
 html{overscroll-behavior-x:none}
 body{touch-action:pan-y pinch-zoom}
@@ -95,6 +95,9 @@ dialog button.wide{width:100%;margin-top:8px}
 .tab.on{background:var(--ac);color:#0f172a}
 .cnt{font-size:12px;font-weight:700;background:rgba(127,127,127,.22);border-radius:99px;padding:1px 7px;min-width:20px;text-align:center}
 .tab.on .cnt{background:rgba(15,23,42,.18)}
+.tab{white-space:nowrap}
+/* three tabs on a narrow phone: icon above the label, count as a corner badge */
+@media(max-width:430px){.tab{position:relative;flex-direction:column;gap:1px;padding:7px 4px;font-size:14px;line-height:1.2}.ti{font-size:17px}.cnt{position:absolute;top:4px;right:5px;font-size:11px;padding:0 5px;min-width:17px}}
 .cnt:empty{display:none}
 .tdl .gh{display:flex;align-items:baseline;gap:8px}
 .tdl .gh .hint{margin-left:auto;font-size:11px;color:color-mix(in srgb,var(--t) 75%,var(--c))}
@@ -108,6 +111,10 @@ dialog button.wide{width:100%;margin-top:8px}
 .td.done{opacity:.5}
 .td.done .tdt{text-decoration:line-through;cursor:default}
 .td.done .tchk{background:var(--td)}
+.ds{display:flex;align-items:center;gap:10px;padding:8px 6px 8px 14px;background:color-mix(in srgb,var(--ds) 9%,transparent);border-bottom:1px solid color-mix(in srgb,var(--ds) 22%,transparent)}
+.ds:last-child{border-bottom:0}
+.ds .tdt{padding:8px 0}
+.ds .x{flex:none;background:transparent;color:var(--mu);width:36px;height:36px;padding:0;margin-left:14px;font-weight:400}
 .td.lift{z-index:5;background:var(--card);box-shadow:inset 0 0 0 2px var(--td)}
 body.dragging{cursor:grabbing}
 .tded{flex:1;min-width:0;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--td);background:var(--card);color:var(--tx);resize:none;overflow:hidden;user-select:text;-webkit-user-select:text}
@@ -138,15 +145,16 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v1.6</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v1.7</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
     </div>
   </header>
   <nav class="tabs" role="tablist">
-    <button class="tab on" data-tab="g" role="tab" aria-selected="true">🛒 Groceries <span class="cnt" id="cntG"></span></button>
-    <button class="tab" data-tab="t" role="tab" aria-selected="false">📝 To-dos <span class="cnt" id="cntT"></span></button>
+    <button class="tab on" data-tab="g" role="tab" aria-selected="true"><span class="ti">🛒</span> Groceries <span class="cnt" id="cntG"></span></button>
+    <button class="tab" data-tab="t" role="tab" aria-selected="false"><span class="ti">📝</span> To-dos <span class="cnt" id="cntT"></span></button>
+    <button class="tab" data-tab="d" role="tab" aria-selected="false"><span class="ti">🍽️</span> Dishes</button>
   </nav>
 
 <div id="paneG">
@@ -174,6 +182,17 @@ body.dragging{cursor:grabbing}
   <div id="tdDoneCard" class="list tdl" style="--c:#5F6B7A;--t:#fff;margin-top:12px" hidden>
     <div class="gh"><b>Done</b><span class="en" id="tdDoneN"></span><button class="lnk" id="tdClear" type="button">Clear all</button></div>
     <div id="tdDone"></div>
+  </div>
+</div>
+
+<div id="paneD" hidden>
+  <form id="dsForm" class="add" autocomplete="off">
+    <input id="dsNew" placeholder="Add a dish…" enterkeyhint="done" autocapitalize="sentences" autocomplete="off">
+  </form>
+  <div id="dsHint" class="mu" style="margin-top:6px"></div>
+  <div class="list tdl" style="--c:var(--ds);--t:var(--dst);margin-top:12px">
+    <div class="gh"><b>Saved dishes</b><span class="en" id="dsN"></span><span class="hint" id="dsTip"></span></div>
+    <div id="dsList"></div>
   </div>
 </div>
 </div>
@@ -212,6 +231,19 @@ body.dragging{cursor:grabbing}
     <button id="cdSave" type="button">Save</button>
   </div>
   <button id="cdDel" class="ghost wide" type="button" style="color:var(--dn)">Remove from list</button>
+</dialog>
+
+<!-- dish -->
+<dialog id="dsDlg">
+  <div style="font-weight:600">Dish</div>
+  <div class="lbl">Name</div>
+  <input id="dsName" autocapitalize="sentences" autocomplete="off" enterkeyhint="done">
+  <div class="mu" style="margin-top:8px">Recipes are coming later.</div>
+  <div class="dbtns">
+    <button id="dsCancel" class="sec" type="button">Cancel</button>
+    <button id="dsSave" type="button">Save</button>
+  </div>
+  <button id="dsDel" class="ghost wide" type="button" style="color:var(--dn)">Delete dish</button>
 </dialog>
 
 <!-- share / settings -->
@@ -274,7 +306,7 @@ const splitDef=v=>{const [a,u]=(v||'1 pcs').split(' ');return {amt:parseAmt(a),u
 Object.entries(SEED_ITEMS).forEach(([cat,s])=>s.split(';').forEach(p=>{const [da,en]=p.split('=');const id=keyOf(da);seedItems[id]={id,da,en:en||'',cat,n:0,at:0,...splitDef(defMap[da]||SEED_CATDEF[cat])}}));
 
 // ---------- state ----------
-let listCode=load('cl_code',''),items=load('cl_items',[]),todos=load('cl_todos',[]),shared=load('cl_shared',{}),customCats=load('cl_cats',{}),db=null,unsubs=[],online=navigator.onLine,pend={},dlgState=null;
+let listCode=load('cl_code',''),items=load('cl_items',[]),todos=load('cl_todos',[]),dishes=load('cl_dishes',[]),shared=load('cl_shared',{}),customCats=load('cl_cats',{}),db=null,unsubs=[],online=navigator.onLine,pend={},dlgState=null;
 const hasCfg=()=>typeof firebase!=='undefined'&&typeof FIREBASE_CONFIG!=='undefined'&&FIREBASE_CONFIG&&FIREBASE_CONFIG.apiKey&&!/YOUR_/.test(FIREBASE_CONFIG.apiKey);
 const col=n=>db.collection('lists').doc(listCode).collection(n);
 
@@ -311,6 +343,7 @@ function connect(){
   },bad));
   watch('items',l=>{items=l;save('cl_items',items)});
   watch('todos',l=>{todos=l;save('cl_todos',todos)});
+  watch('dishes',l=>{dishes=l;save('cl_dishes',dishes)});
   watch('catalog',l=>{shared={};l.forEach(v=>{shared[v.id]=v.da?v:{...v,da:v.name||v.id,en:''}});save('cl_shared',shared)});
   watch('cats',l=>{customCats={};l.forEach(v=>customCats[v.id]=v);save('cl_cats',customCats)});
 }
@@ -518,7 +551,7 @@ function render(){
   $('#doneH').textContent=`In the cart · ${done.length}`;
   suggest();
   $('#cntG').textContent=todo.length||'';
-  renderTodos();
+  renderTodos();renderDishes();
 }
 function drawMgr(){
   const s=Object.values(shared).sort((a,b)=>catRank(a.cat)-catRank(b.cat)||a.da.localeCompare(b.da,'da'));
@@ -551,15 +584,56 @@ $('#newItem').oninput=suggest;
 $('#clearDone').onclick=()=>{const d=items.filter(i=>i.done);if(d.length&&confirm(`Remove ${d.length} item${d.length>1?'s':''} from the cart?`))d.forEach(i=>removeItem(i.id))};
 
 // ---------- tabs ----------
+const SWT=['g','t','d'],SWN={g:'Groceries',t:'To-dos',d:'Dishes'},PANE={g:'#paneG',t:'#paneT',d:'#paneD'};
 let tab=load('cl_tab','g');
 function setTab(t,dir){
   const prev=tab;
-  tab=t==='t'?'t':'g';save('cl_tab',tab);
-  $('#paneG').hidden=tab!=='g';$('#paneT').hidden=tab!=='t';
+  tab=SWT.includes(t)?t:'g';save('cl_tab',tab);
+  SWT.forEach(k=>$(PANE[k]).hidden=k!==tab);
   document.querySelectorAll('.tab').forEach(b=>{const on=b.dataset.tab===tab;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
-  if(dir&&prev!==tab){const p=$(tab==='g'?'#paneG':'#paneT');p.classList.remove('inL','inR');void p.offsetWidth;p.classList.add(dir>0?'inR':'inL')}
+  if(dir&&prev!==tab){const p=$(PANE[tab]);p.classList.remove('inL','inR');void p.offsetWidth;p.classList.add(dir>0?'inR':'inL')}
 }
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab,b.dataset.tab==='t'?1:-1)));
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab,SWT.indexOf(b.dataset.tab)>SWT.indexOf(tab)?1:-1)));
+
+// ---------- dishes: a shared, alphabetical list of saved dishes ----------
+// Each dish is stored as {id,name,serves,ingredients,ts}. serves (default 2) and ingredients ([] for now)
+// are there for recipes later, so adding them won't need a data migration.
+const dishKey=s=>s.trim().toLocaleLowerCase('da');
+let dsOpen=null;
+function putDish(d){const i=dishes.findIndex(x=>x.id===d.id);if(i<0)dishes.push(d);else dishes[i]=d;save('cl_dishes',dishes);renderDishes();put('dishes',d)}
+function removeDish(id){dishes=dishes.filter(x=>x.id!==id);save('cl_dishes',dishes);renderDishes();del('dishes',id)}
+const dishByName=(n,except)=>dishes.find(d=>d.id!==except&&dishKey(d.name)===dishKey(n));
+function renderDishes(){
+  if(!listCode)return;
+  const l=[...dishes].sort((a,b)=>a.name.localeCompare(b.name,'da'));
+  $('#dsList').innerHTML=l.length?l.map(d=>`<div class="ds" data-id="${esc(d.id)}"><div class="tdt" data-de="${esc(d.id)}">${esc(d.name)}</div><button class="x" data-dd="${esc(d.id)}" aria-label="Delete">✕</button></div>`).join(''):'<div class="empty">No dishes yet.<br>Add one above, e.g. Lasagne.</div>';
+  $('#dsN').textContent=l.length?` · ${l.length}`:'';
+  $('#dsTip').textContent=l.length?'tap to rename':'';
+}
+$('#dsForm').onsubmit=e=>{
+  e.preventDefault();const i=$('#dsNew'),name=i.value.trim().replace(/\s+/g,' ');if(!name)return;
+  const dup=dishByName(name);
+  if(dup){$('#dsHint').textContent=`"${dup.name}" is already saved.`;setTimeout(()=>$('#dsHint').textContent='',2500)}
+  else{putDish({id:uid(),name,serves:2,ingredients:[],ts:Date.now()});i.value='';$('#dsHint').textContent=''}
+  i.focus();
+};
+$('#dsList').addEventListener('click',e=>{
+  const x=e.target.closest('[data-dd]'),t=e.target.closest('[data-de]');
+  if(x){const d=dishes.find(v=>v.id===x.dataset.dd);if(d&&confirm(`Delete "${d.name}"?`))removeDish(d.id);return}
+  if(t){const d=dishes.find(v=>v.id===t.dataset.de);if(!d)return;dsOpen=d.id;$('#dsName').value=d.name;$('#dsDlg').showModal()}
+});
+function dsSave(){
+  const d=dishes.find(v=>v.id===dsOpen),name=$('#dsName').value.trim().replace(/\s+/g,' ');
+  if(!d){$('#dsDlg').close();return}
+  if(!name)return $('#dsName').focus();
+  if(dishByName(name,d.id))return alert(`"${name}" is already saved.`);
+  if(name!==d.name)putDish({...d,name});
+  $('#dsDlg').close();
+}
+$('#dsSave').onclick=dsSave;
+$('#dsName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();dsSave()}});
+$('#dsCancel').onclick=()=>$('#dsDlg').close();
+$('#dsDel').onclick=()=>{const d=dishes.find(v=>v.id===dsOpen);if(d&&confirm(`Delete "${d.name}"?`))removeDish(d.id);$('#dsDlg').close()};
 
 // ---------- to-dos: one shared ordered list; numbered i., ii., … by position; ticked ones sink to "Done" ----------
 const TODO_MAX=50;
@@ -683,8 +757,8 @@ document.addEventListener('mouseup',()=>{if(drag)tdEnd();else tdPressCancel()});
 
 // swipe left/right to change tab, with live feedback: the page follows the finger, a label names the next tab,
 // and it lights up once the swipe is long enough to switch.
-const SWT=['g','t'],SWN={g:'Groceries',t:'To-dos'},SWTH=70;
-const swPane=()=>$(tab==='g'?'#paneG':'#paneT');
+const SWTH=70;
+const swPane=()=>$(PANE[tab]);
 const swBtn=k=>document.querySelector('.tab[data-tab="'+k+'"]');
 let sw=null;
 function swReset(){const p=sw&&sw.p;if(p){p.style.transition='transform .18s,opacity .18s';p.style.transform='';p.style.opacity=''}$('#swh')?.remove();SWT.forEach(k=>swBtn(k)?.classList.remove('nx'));sw=null}
@@ -714,7 +788,7 @@ const link=()=>location.origin+location.pathname+'?list='+listCode;
 const standalone=()=>navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;
 // in the browser, keep ?list=CODE in the address so adding to the home screen (iPhone) takes the list along
 function keepCodeInUrl(){history.replaceState(null,'',location.pathname+(listCode&&!standalone()?'?list='+listCode:''))}
-function resetLocal(){items=[];todos=[];shared={};customCats={};save('cl_todos',[]);save('cl_items',[]);save('cl_shared',{});save('cl_cats',{})}
+function resetLocal(){items=[];todos=[];dishes=[];save('cl_dishes',[]);shared={};customCats={};save('cl_todos',[]);save('cl_items',[]);save('cl_shared',{});save('cl_cats',{})}
 function joinList(code){
   code=cleanCode(code);if(code.length<4)return alert('Enter the list code');
   listCode=code;save('cl_code',code);resetLocal();

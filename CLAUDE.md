@@ -14,7 +14,7 @@ Rules for any Claude chat working on this repo.
 
 ## Don'ts
 - Keep personal details (Firebase project sharing, names) out of public files like the README.
-- Firestore data lives under `lists/{code}/{items|catalog|cats|todos}`; don't move it without a migration, or existing lists disappear.
+- Firestore data lives under `lists/{code}/{items|catalog|cats|todos|dishes}`; don't move it without a migration, or existing lists disappear.
 
 ## Address and storage rules
 
