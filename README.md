@@ -98,13 +98,16 @@ lists/{private}/meta   its private lists ("tl_<id>")
 
 ### Firestore rule
 
+Only known list codes are allowed (set 2026-10-22). The rules live only in the Firebase console, never in this public repo, because they contain the real codes:
+
 ```
+function listOk(id) { return id in ['<shared list code>', '<private to-do code>', ...]; }
 match /lists/{listId}/{sub}/{id} {
-  allow read, write: if true;
+  allow read, write: if listOk(listId);
 }
 ```
 
-Rules are open by design: the unguessable list code is what keeps a list private. Private to-do lists work the same way, under a second code that only the phone that made it knows. The web config in `firebase-config.js` is not a secret.
+Anyone can open the app, but with any other code nothing syncs: it can't read, write or create a list. **A new list (or a new private to-do list) only works after its code is added to the rules** in the Firebase console (Firestore → Rules → Publish). The same rules also cover Nap Log, which shares the Firebase project. The web config in `firebase-config.js` is not a secret.
 
 ## Running your own copy
 
