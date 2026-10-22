@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com/firebasejs/; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://www.google.com/images/cleardot.gif; connect-src 'self' https://firestore.googleapis.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Home log">
@@ -183,7 +184,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.7</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.8</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -370,7 +371,7 @@ const load=(k,d)=>{try{
   const v=JSON.parse(raw);return v??d}catch{return d}};
 const save=(k,v)=>{try{localStorage.setItem(LSK(k),JSON.stringify(v))}catch{}};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cleanCode=s=>(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
 const newCode=()=>{const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';crypto.getRandomValues(new Uint8Array(8)).forEach(n=>s+=a[n%a.length]);return s};
 const keyOf=s=>s.trim().toLowerCase().replace(/[\/\s]+/g,'_');
@@ -628,12 +629,12 @@ function row(it){
   const {amt,unit}=itemQty(it);
   const ctl=it.done
     ?`<span class="ql">${fmt(amt)} ${esc(unit)}</span>`
-    :`<div class="step"><button class="sb" data-qm="${it.id}" aria-label="Less">−</button><button class="qv" data-e="${it.id}" aria-label="Edit amount"><b>${fmt(amt)}</b><small>${esc(unit)}</small></button><button class="sb" data-qp="${it.id}" aria-label="More">+</button></div>`;
+    :`<div class="step"><button class="sb" data-qm="${esc(it.id)}" aria-label="Less">−</button><button class="qv" data-e="${esc(it.id)}" aria-label="Edit amount"><b>${fmt(amt)}</b><small>${esc(unit)}</small></button><button class="sb" data-qp="${esc(it.id)}" aria-label="More">+</button></div>`;
   return `<div class="item ${it.done?'done':''}" style="${catStyle(it.cat||'andet')}">
-    <button class="chk" data-t="${it.id}" aria-label="Toggle">${it.done?'✓':''}</button>
-    <div class="txt" data-e="${it.id}">${nameHtml(itemDa(it),it.en)}</div>
+    <button class="chk" data-t="${esc(it.id)}" aria-label="Toggle">${it.done?'✓':''}</button>
+    <div class="txt" data-e="${esc(it.id)}">${nameHtml(itemDa(it),it.en)}</div>
     ${ctl}
-    <button class="x" data-d="${it.id}" aria-label="Delete">✕</button></div>`;
+    <button class="x" data-d="${esc(it.id)}" aria-label="Delete">✕</button></div>`;
 }
 function groups(list){
   const m={};list.forEach(i=>(m[i.cat||'andet']??=[]).push(i));

@@ -73,6 +73,12 @@ Home log has its own address, but it still keeps strictly to its own cache and s
 - `localStorage` keys are prefixed `cart-log.` (older `cl_` keys are moved over automatically).
 - Firebase runs as a named app (`cart-log`), so Firestore's offline database and its tab-sync `localStorage` keys (`firestore_…/cart-log/…`) are separate from any other app on the origin that uses the same Firebase project.
 
+### Security
+
+- No secrets in the code: the Firebase web config is public by design; the Firestore rules decide who may read or write.
+- Everything synced or typed in is shown as text: it goes through `esc()` before it reaches the page, item ids included.
+- `index.html` sets a Content-Security-Policy: scripts only from this site and the pinned Firebase SDK on gstatic.com, and data may only be sent to this site and Firestore (`firestore.googleapis.com`). Inline scripts are still allowed for now, because the app's code lives inside `index.html`; splitting it into files (planned readability refactor) lets the policy drop that.
+
 ### Data layout
 
 Everything for one list lives under its code:

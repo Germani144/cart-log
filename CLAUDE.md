@@ -17,6 +17,11 @@ Rules for any Claude chat working on this repo.
 - Firestore data lives under `lists/{code}/{items|catalog|cats|todos|dishes|meta}`; don't move it without a migration, or existing lists disappear.
 - Private to-do lists live under each phone's own private code (`localStorage` `cart-log.me`): `lists/{me}/{todos|meta}`. Never write private data under the shared list code, and never show the private code anywhere but the ⋯ menu. Home's to-dos have no `list` field; keep it that way so older data still shows.
 
+## Security rules
+- `index.html` has a Content-Security-Policy. Keep it: if a feature needs another address, add exactly that address to the right directive (`connect-src` for data, `script-src` for scripts) and say so in the README. Never add `*` or broad wildcards.
+- Anything that came from Firestore, the catalog or the user goes through `esc()` before it is put into HTML (text and attributes, ids included). Prefer `textContent` where possible.
+- No secrets in this public repo, and no personal data (lists, exports) committed.
+
 ## Address and storage rules
 
 Home log lives at https://germani144-home.github.io/cart-log/ (repo `germani144-home/cart-log`, moved from `Germani144/cart-log` on 2026-10-20).
