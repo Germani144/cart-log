@@ -184,7 +184,7 @@ body.dragging{cursor:grabbing}
 <!-- main -->
 <div id="main" hidden>
   <header>
-    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.8</span></h1><!-- version: bump together with the cache name in sw.js -->
+    <h1 class="brand"><img src="icon-192.png" width="30" height="30" alt="">Home log<span class="ver" id="ver">v3.9</span></h1><!-- version: bump together with the cache name in sw.js -->
     <div>
       <span class="mu"><span id="dot" class="dot"></span><span id="sync"></span></span>
       <button class="ghost" id="menu" aria-label="List settings">⋯</button>
@@ -1220,7 +1220,7 @@ function joinList(code){
   keepCodeInUrl();
   connect();render();
 }
-$('#create').onclick=()=>joinList(newCode());
+$('#create').onclick=()=>{joinList(newCode());addDishes(WELCOME_ITEMS,WELCOME_DISHES)};
 $('#join').onclick=()=>joinList($('#joinCode').value);
 $('#joinCode').addEventListener('keydown',e=>{if(e.key==='Enter')joinList(e.target.value)});
 function drawMe(){
@@ -1253,6 +1253,21 @@ $('#mgrBtn').onclick=()=>{$('#dlg').close();drawMgr();$('#mgrDlg').showModal()};
 $('#mgrClose').onclick=()=>$('#mgrDlg').close();
 // starter dishes (dishes-pack.json): adds the dishes this list doesn't have yet (by name) and any missing items
 // to the shared database. Safe to run again: nothing already saved is changed.
+// add dishes ({name,serves,ingredients:[{da,en,amt,unit}]}) plus any missing items to the database; nothing saved is changed
+function addDishes(newItems,list){
+  for(const it of newItems){const cid=keyOf(it.da);if(!entries()[cid])upsertShared({id:cid,da:it.da,en:it.en,cat:it.cat,amt:it.amt,unit:it.unit,n:0,at:Date.now()})}
+  list.forEach((d,i)=>putDish({id:uid(),name:d.name,serves:d.serves||2,ts:Date.now()+i,ingredients:d.ingredients.map(g=>{
+    const cid=keyOf(g.da),e=entries()[cid],u=e?entryDef(e).unit:g.unit,c=conv(g.amt,g.unit,u);
+    return {cid,da:e?e.da:g.da,en:e?e.en:g.en,amt:c!=null?Math.round(c*1000)/1000:g.amt,unit:c!=null?u:g.unit};
+  })}));
+}
+// every brand-new list starts with one classic in its recipes (lists you join keep what they have)
+const WELCOME_ITEMS=[{da:'Ladyfingers',en:'Ladyfingers',cat:'kolonial',unit:'pack',amt:1},{da:'Vaniljecreme',en:'Custard',cat:'mejeri',unit:'pack',amt:1}];
+const WELCOME_DISHES=[{name:"Rachel's trifle",serves:8,ingredients:[
+  {da:'Ladyfingers',en:'Ladyfingers',amt:1,unit:'pack'},{da:'Marmelade',en:'Jam',amt:1,unit:'pack'},
+  {da:'Vaniljecreme',en:'Custard',amt:2,unit:'pack'},{da:'Hindbær',en:'Raspberries',amt:250,unit:'g'},
+  {da:'Hakket oksekød',en:'Ground beef',amt:500,unit:'g'},{da:'Frosne ærter',en:'Frozen peas',amt:1,unit:'pack'},
+  {da:'Løg',en:'Onions',amt:.2,unit:'kg'},{da:'Bananer',en:'Bananas',amt:1,unit:'bunch'},{da:'Piskefløde',en:'Whipping cream',amt:5,unit:'dl'}]}];
 var pack=null;
 async function loadPack(){if(!pack)try{pack=await (await fetch('dishes-pack.json',{cache:'no-cache'})).json()}catch{}return pack}
 // in the Dishes tab: a button that says how many starter dishes this list doesn't have yet (hidden when none)
@@ -1264,11 +1279,7 @@ $('#packBtn').onclick=async()=>{
   const todo=pack.dishes.filter(d=>!dishByName(d.name));
   if(!todo.length)return alert('All starter dishes are already in this list.');
   if(!confirm(`Add ${todo.length} dishes with recipes (for 2) to this list? Dishes you already have are kept as they are.`))return;
-  for(const it of pack.items){const cid=keyOf(it.da);if(!entries()[cid])upsertShared({id:cid,da:it.da,en:it.en,cat:it.cat,amt:it.amt,unit:it.unit,n:0,at:Date.now()})}
-  todo.forEach((d,i)=>putDish({id:uid(),name:d.name,serves:d.serves||2,ts:Date.now()+i,ingredients:d.ingredients.map(g=>{
-    const cid=keyOf(g.da),e=entries()[cid],u=e?entryDef(e).unit:g.unit,c=conv(g.amt,g.unit,u);
-    return {cid,da:e?e.da:g.da,en:e?e.en:g.en,amt:c!=null?Math.round(c*1000)/1000:g.amt,unit:c!=null?u:g.unit};
-  })}));
+  addDishes(pack.items,todo);
   $('#dlg').close();setTab('d',1);
   $('#dsHint').textContent=`Added ${todo.length} dishes. Tap one to see its recipe.`;setTimeout(()=>$('#dsHint').textContent='',6000);
 };
