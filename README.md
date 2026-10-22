@@ -42,6 +42,8 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 - Updates install themselves; the app reloads once when a new version is available. ⋯ → **Check for updates** compares with the version on the server and, if there's a newer one, clears the app's cache and reloads straight into it.
 - The version (e.g. v1.0) shows next to the title, so you can tell which build a phone is running.
 - Follows the phone's light or dark mode.
+- **Backup:** ⋯ → **Export data** downloads `home-log-YYYY-MM-DD.json` with this shared list's groceries, item database, categories, to-dos, recipes and list settings, plus this phone's private to-dos as a separate section. List codes are never in the file. The file is made in the browser, so nothing is sent anywhere.
+- ⋯ → **Import data** checks the whole file first (format, version and every field; old exports with missing fields are fine) and writes nothing if anything is wrong. A preview shows what's in it, then **Merge** (default) adds entries that aren't here yet and keeps everything that is (matched by id), or **Replace** wipes and restores, after a second confirmation because every phone on the list sees it. Shared data goes to this list, private to-dos only under this phone's private code (skipped if the phone has none yet).
 - Dialogs open without popping up the keyboard; it appears when you tap a field. While the keyboard is up, the dialog fits above it and scrolls the field you're typing in to the top, so suggestions stay visible.
 
 ## Versioning
@@ -117,3 +119,13 @@ Anyone can open the app, but with any other code nothing syncs: it can't read, w
 4. Open the Pages URL, create a list, and install it to the home screen.
 
 Without a config the app still runs, but the list stays on that one phone ("local only").
+
+### Export file format
+
+```
+{ "format": "home-log-export", "version": 1, "exportedAt": "…", "appVersion": "v4.0",
+  "shared":  { "items": […], "catalog": […], "cats": […], "todos": […], "dishes": […], "meta": […] },
+  "private": { "todos": […], "meta": […] } | null }
+```
+
+Each entry is a Firestore document with its `id`, using the fields from *Data layout*. Only known fields are exported and accepted; sections may be left out.

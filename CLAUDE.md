@@ -20,7 +20,8 @@ Rules for any Claude chat working on this repo.
 ## Security rules
 - `index.html` has a Content-Security-Policy. Keep it: if a feature needs another address, add exactly that address to the right directive (`connect-src` for data, `script-src` for scripts) and say so in the README. Never add `*` or broad wildcards.
 - Anything that came from Firestore, the catalog or the user goes through `esc()` before it is put into HTML (text and attributes, ids included). Prefer `textContent` where possible.
-- No secrets in this public repo, and no personal data (lists, exports) committed.
+- No secrets in this public repo, and no personal data (lists, exports) committed. Export files (`home-log-*.json`) are in `.gitignore`; never commit one.
+- Export/import (`EXP_VERSION`, `SPEC`, `metaSpec` in `index.html`): when a document gets a new field, add it to the spec too, or exports drop it and imports reject it. If the file format changes incompatibly, bump `EXP_VERSION` and keep reading the old version.
 
 ## Address and storage rules
 
