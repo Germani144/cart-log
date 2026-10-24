@@ -4,7 +4,9 @@ const { test, expect, LIST, addItem, addTodo, paste, tab } = require('../fixture
 
 const COLS = ['items', 'catalog', 'cats', 'todos', 'dishes', 'meta'];
 const sortById = (list) => [...list].sort((x, y) => (x.id < y.id ? -1 : 1));
-const sectionsEqual = (x, y) => JSON.stringify(Object.fromEntries(Object.entries(x).map(([k, v]) => [k, sortById(v)]))) === JSON.stringify(Object.fromEntries(Object.entries(y).map(([k, v]) => [k, sortById(v)])));
+const sectionsEqual = (x, y) =>
+  JSON.stringify(Object.fromEntries(Object.entries(x).map(([k, v]) => [k, sortById(v)]))) ===
+  JSON.stringify(Object.fromEntries(Object.entries(y).map(([k, v]) => [k, sortById(v)])));
 
 async function exportFile(page) {
   await page.tap('#menu');
@@ -18,7 +20,11 @@ async function importFile(page, content, name = 'backup.json') {
     if (!document.querySelector('#dlg').open) document.querySelector('#menu').click();
     document.querySelector('#impFile').value = '';
   });
-  await page.setInputFiles('#impFile', { name, mimeType: 'application/json', buffer: Buffer.from(typeof content === 'string' ? content : JSON.stringify(content)) });
+  await page.setInputFiles('#impFile', {
+    name,
+    mimeType: 'application/json',
+    buffer: Buffer.from(typeof content === 'string' ? content : JSON.stringify(content)),
+  });
   await page.waitForTimeout(200);
 }
 
@@ -79,14 +85,19 @@ test('export → replace → export gives the same data, and the other phone fol
   await a.tap('#ioGo');
   await expect.poll(() => cloud.list(`lists/${LIST}/todos`).some((t) => t.text.startsWith('Extra'))).toBe(false);
   for (const c of COLS) expect(cloud.list(`lists/${LIST}/${c}`).length, c).toBe(first.shared[c].length);
-  await expect.poll(() => b.evaluate(() => JSON.parse(localStorage.getItem('cart-log.dishes')).length)).toBe(first.shared.dishes.length);
+  await expect
+    .poll(() => b.evaluate(() => JSON.parse(localStorage.getItem('cart-log.dishes')).length))
+    .toBe(first.shared.dishes.length);
 
   const second = JSON.parse((await exportFile(a)).text);
   expect(sectionsEqual(first.shared, second.shared)).toBe(true);
   expect(sectionsEqual(first.private, second.private)).toBe(true);
 });
 
-test('merge adds only what is missing, keeps local changes, and private data goes only under the private code', async ({ phone, cloud }) => {
+test('merge adds only what is missing, keeps local changes, and private data goes only under the private code', async ({
+  phone,
+  cloud,
+}) => {
   const a = await phone();
   await seed(a);
   const file = JSON.parse((await exportFile(a)).text);
@@ -96,7 +107,9 @@ test('merge adds only what is missing, keeps local changes, and private data goe
   await addItem(c, 'æg');
   await importFile(c, file);
   await expect(c.locator('#ioDlg [data-im="merge"]')).toHaveClass(/sel/);
-  await expect(c.locator('#ioCounts')).toContainText(`Recipes${file.shared.dishes.length} (${file.shared.dishes.length} new)`);
+  await expect(c.locator('#ioCounts')).toContainText(
+    `Recipes${file.shared.dishes.length} (${file.shared.dishes.length} new)`,
+  );
   await c.tap('#ioGo');
   await expect.poll(() => cloud.list('lists/OTHER222/items').length).toBe(1 + file.shared.items.length);
   expect(cloud.list('lists/OTHER222/dishes')).toHaveLength(file.shared.dishes.length);
@@ -143,9 +156,17 @@ test('bad files are rejected with a reason and nothing is written', async ({ pho
     [with_('shared', 'items', [{ ...x.shared.items[0], unit: 'barrel' }]), 'shared.items[0].unit: must be one of'],
     [with_('shared', 'todos', [x.shared.todos[0], x.shared.todos[0]]), 'appears twice'],
     [with_('shared', 'dishes', [{ id: 'a/b', name: 'x' }]), 'shared.dishes[0].id: must be a valid id'],
-    [with_('shared', 'dishes', [{ ...x.shared.dishes[0], ingredients: [{ cid: 'mel', da: 'Mel', amt: -1, unit: 'kg' }] }]), 'ingredients[0].amt: must be a positive amount'],
+    [
+      with_('shared', 'dishes', [
+        { ...x.shared.dishes[0], ingredients: [{ cid: 'mel', da: 'Mel', amt: -1, unit: 'kg' }] },
+      ]),
+      'ingredients[0].amt: must be a positive amount',
+    ],
     [with_('private', 'meta', [{ id: 'dishes', title: 'x' }]), 'private.meta[0]: unknown kind of entry'],
-    [with_('shared', 'cats', [{ id: 'c', da: 'x', color: 'red;background:url(x)' }]), 'shared.cats[0].color: must be a colour'],
+    [
+      with_('shared', 'cats', [{ id: 'c', da: 'x', color: 'red;background:url(x)' }]),
+      'shared.cats[0].color: must be a colour',
+    ],
     [with_('shared', 'todos', [{ id: 't1', done: false }]), 'shared.todos[0].text: missing'],
   ];
   for (const [file, reason] of cases) {
@@ -156,7 +177,10 @@ test('bad files are rejected with a reason and nothing is written', async ({ pho
   expect(JSON.stringify(cloud.docs)).toBe(before);
 });
 
-test('an old export with missing sections and fields still imports; imported text shows as text', async ({ phone, cloud }) => {
+test('an old export with missing sections and fields still imports; imported text shows as text', async ({
+  phone,
+  cloud,
+}) => {
   const a = await phone({ list: 'OLDFILE2' });
   await importFile(a, {
     format: 'home-log-export',

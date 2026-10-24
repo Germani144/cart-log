@@ -5,8 +5,8 @@
   "scripts": {
     "test": "playwright test",
     "test:unit": "playwright test tests/unit",
-    "format": "prettier --write \"*.{html,css,js,json,md}\" \"js/**/*.js\" \"tests/**/*.js\"",
-    "format:check": "prettier --check \"*.{html,css,js,json,md}\" \"js/**/*.js\" \"tests/**/*.js\""
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@playwright/test": "1.56.0",

@@ -4,7 +4,10 @@ const { test, expect, LIST, addItem, groceryNames, cartNames } = require('../fix
 const items = (cloud) => cloud.list(`lists/${LIST}/items`);
 const catalog = (cloud) => cloud.list(`lists/${LIST}/catalog`);
 
-test('a known item lands in its category with its standard unit and syncs to the other phone', async ({ phone, cloud }) => {
+test('a known item lands in its category with its standard unit and syncs to the other phone', async ({
+  phone,
+  cloud,
+}) => {
   const a = await phone();
   const b = await phone({ device: 'iPhone 13' });
   await addItem(a, '2 mælk');
@@ -47,7 +50,10 @@ test('the amount steps with − / +, and items tick into the cart and clear out'
   expect(a.dialogs.pop()).toContain('Remove 1 item from the cart?');
 });
 
-test('adding an item that is in the cart moves it back to the list instead of duplicating it', async ({ phone, cloud }) => {
+test('adding an item that is in the cart moves it back to the list instead of duplicating it', async ({
+  phone,
+  cloud,
+}) => {
   const a = await phone();
   await addItem(a, 'mælk');
   await a.tap('#todo .chk');
@@ -58,7 +64,10 @@ test('adding an item that is in the cart moves it back to the list instead of du
   expect(items(cloud)).toHaveLength(1);
 });
 
-test('an unknown item goes under Andet, and setting it up creates a category and a database entry', async ({ phone, cloud }) => {
+test('an unknown item goes under Andet, and setting it up creates a category and a database entry', async ({
+  phone,
+  cloud,
+}) => {
   const a = await phone();
   await addItem(a, 'Saffranstråde');
   await expect.poll(() => items(cloud)[0]?.cat).toBe('andet');
@@ -70,11 +79,27 @@ test('an unknown item goes under Andet, and setting it up creates a category and
   await a.tap('#cdUnits [data-un="g"]');
   await a.fill('#cdAmt', '2');
   await a.tap('#cdSave');
-  await expect.poll(() => cloud.list(`lists/${LIST}/cats`)).toEqual([
-    expect.objectContaining({ id: 'c_krydderiskab', da: 'Krydderiskab', color: expect.stringMatching(/^#[0-9a-fA-F]{6}$/) }),
-  ]);
-  expect(items(cloud)[0]).toMatchObject({ da: 'Saffranstråde', en: 'Saffron threads', cat: 'c_krydderiskab', amt: 2, unit: 'g' });
-  expect(catalog(cloud).find((c) => c.id === 'saffranstråde')).toMatchObject({ cat: 'c_krydderiskab', amt: 2, unit: 'g' });
+  await expect
+    .poll(() => cloud.list(`lists/${LIST}/cats`))
+    .toEqual([
+      expect.objectContaining({
+        id: 'c_krydderiskab',
+        da: 'Krydderiskab',
+        color: expect.stringMatching(/^#[0-9a-fA-F]{6}$/),
+      }),
+    ]);
+  expect(items(cloud)[0]).toMatchObject({
+    da: 'Saffranstråde',
+    en: 'Saffron threads',
+    cat: 'c_krydderiskab',
+    amt: 2,
+    unit: 'g',
+  });
+  expect(catalog(cloud).find((c) => c.id === 'saffranstråde')).toMatchObject({
+    cat: 'c_krydderiskab',
+    amt: 2,
+    unit: 'g',
+  });
   // next time it's known: typed again after clearing, it goes straight into the new category
   await a.tap('#todo .txt');
   await a.tap('#cdDel');

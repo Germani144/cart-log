@@ -5,7 +5,10 @@ const dishes = (cloud) => cloud.list(`lists/${LIST}/dishes`);
 const items = (cloud) => cloud.list(`lists/${LIST}/items`);
 const ingRows = (page) =>
   page.$$eval('#ingList .ing', (rows) =>
-    rows.map((r) => `${r.querySelector('.da').textContent} ${r.querySelector('input').value} ${r.querySelector('.un')?.textContent ?? r.querySelector('select').value}`),
+    rows.map(
+      (r) =>
+        `${r.querySelector('.da').textContent} ${r.querySelector('input').value} ${r.querySelector('.un')?.textContent ?? r.querySelector('select').value}`,
+    ),
   );
 
 async function addDish(page, name) {
@@ -42,7 +45,13 @@ test('dishes: add in alphabetical order, duplicates refused, rename and delete',
   await b.tap('#dsList .tdt >> text=æblekage');
   b.answers.push(true);
   await b.tap('#dsDel');
-  await expect.poll(() => dishes(cloud).map((d) => d.name).sort()).toEqual(['Chili sin carne', 'Lasagne al forno']);
+  await expect
+    .poll(() =>
+      dishes(cloud)
+        .map((d) => d.name)
+        .sort(),
+    )
+    .toEqual(['Chili sin carne', 'Lasagne al forno']);
 });
 
 test('the dish-list title is shared and editable; empty brings back the default', async ({ phone, cloud }) => {
@@ -60,7 +69,10 @@ test('the dish-list title is shared and editable; empty brings back the default'
   await expect(a.locator('#dsTitle')).toHaveText("Badger's best dishes");
 });
 
-test('recipe: ingredients from the item database with their unit fixed; new ingredients pick a unit once', async ({ phone, cloud }) => {
+test('recipe: ingredients from the item database with their unit fixed; new ingredients pick a unit once', async ({
+  phone,
+  cloud,
+}) => {
   const a = await phone();
   const b = await phone({ device: 'iPhone 13' });
   await tab(a, 'recipes');
@@ -106,7 +118,10 @@ test('recipe: ingredients from the item database with their unit fixed; new ingr
   await expect(b.locator('#dsList .dsub')).toHaveText('4 ingredients · for 3');
 });
 
-test('add a dish to the grocery list for N people: scaled, countable units round up, existing items topped up', async ({ phone, cloud }) => {
+test('add a dish to the grocery list for N people: scaled, countable units round up, existing items topped up', async ({
+  phone,
+  cloud,
+}) => {
   const a = await phone();
   await addItem(a, 'mælk'); // 1 l already on the list
   await tab(a, 'recipes');
@@ -121,7 +136,13 @@ test('add a dish to the grocery list for N people: scaled, countable units round
   await expect(a.locator('#ppPrev')).toHaveText('1,5 l Mælk5 pcs Æg0,3 kg Mel'); // 3 people: 4,5 eggs round up to 5
   await a.tap('#ppGo');
   await expect(a.locator('#dsHint')).toHaveText('Pandekager for 3: 2 added, 1 topped up.');
-  await expect.poll(() => items(cloud).map((i) => `${i.da} ${i.amt} ${i.unit}`).sort()).toEqual(['Mel 0.3 kg', 'Mælk 2.5 l', 'Æg 5 pcs']);
+  await expect
+    .poll(() =>
+      items(cloud)
+        .map((i) => `${i.da} ${i.amt} ${i.unit}`)
+        .sort(),
+    )
+    .toEqual(['Mel 0.3 kg', 'Mælk 2.5 l', 'Æg 5 pcs']);
   await tab(a, 'groceries');
   expect(await groceryNames(a)).toEqual(expect.arrayContaining(['Mel', 'Mælk', 'Æg']));
 });
@@ -132,12 +153,25 @@ test('starter dishes: the button shows the count, adds them all once, then hides
   await addDish(a, 'Quiche'); // already here: skipped
   await expect(a.locator('#packBtn2')).toHaveText('＋ Add 34 starter dishes with recipes');
   await a.tap('#packBtn2');
-  expect(a.dialogs.pop()).toBe('Add 34 dishes with recipes (for 2) to this list? Dishes you already have are kept as they are.');
+  expect(a.dialogs.pop()).toBe(
+    'Add 34 dishes with recipes (for 2) to this list? Dishes you already have are kept as they are.',
+  );
   await expect.poll(() => dishes(cloud).length).toBe(35);
   await expect(a.locator('#packBtn2')).toBeHidden();
-  expect(cloud.docs[`lists/${LIST}/catalog/halloumi`]).toMatchObject({ da: 'Halloumi', cat: 'mejeri', unit: 'pack', n: 0 });
+  expect(cloud.docs[`lists/${LIST}/catalog/halloumi`]).toMatchObject({
+    da: 'Halloumi',
+    cat: 'mejeri',
+    unit: 'pack',
+    n: 0,
+  });
   const chili = dishes(cloud).find((d) => d.name === 'Chili con carne');
-  expect(chili.ingredients[0]).toEqual({ cid: 'hakket_oksekød', da: 'Hakket oksekød', en: 'Ground beef', amt: 400, unit: 'g' });
+  expect(chili.ingredients[0]).toEqual({
+    cid: 'hakket_oksekød',
+    da: 'Hakket oksekød',
+    en: 'Ground beef',
+    amt: 400,
+    unit: 'g',
+  });
   await a.tap('#menu');
   await a.tap('#packBtn');
   expect(a.dialogs.pop()).toBe('All starter dishes are already in this list.');
@@ -154,8 +188,15 @@ test('a brand-new list starts with Rachel’s trifle; joining a list adds nothin
   await a.tap('#dsList .tdt');
   await expect(a.locator('#srvN')).toHaveText('8');
   expect(await ingRows(a)).toEqual([
-    'Ladyfingers 1 pack', 'Marmelade 1 pack', 'Vaniljecreme 2 pack', 'Hindbær 250 g', 'Hakket oksekød 500 g',
-    'Frosne ærter 1 pack', 'Løg 0,2 kg', 'Bananer 1 bunch', 'Piskefløde 5 dl',
+    'Ladyfingers 1 pack',
+    'Marmelade 1 pack',
+    'Vaniljecreme 2 pack',
+    'Hindbær 250 g',
+    'Hakket oksekød 500 g',
+    'Frosne ærter 1 pack',
+    'Løg 0,2 kg',
+    'Bananer 1 bunch',
+    'Piskefløde 5 dl',
   ]);
   const j = await phone({ list: 'JOINED22' });
   await tab(j, 'recipes');

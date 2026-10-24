@@ -26,7 +26,10 @@ http
         res.writeHead(404).end('not found');
         return;
       }
-      res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
+      res.writeHead(200, {
+        'Content-Type': types[path.extname(file)] || 'application/octet-stream',
+        'Cache-Control': 'no-cache',
+      });
       res.end(body);
     });
   })

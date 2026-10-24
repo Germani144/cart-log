@@ -42,7 +42,9 @@ test('the share menu shows the list code and the invite link', async ({ phone })
   await expect(a.locator('#dlg')).toBeVisible();
 });
 
-test('manifest is linked on Android but not on iPhone (so Add to Home Screen keeps ?list=)', async ({ phone }, testInfo) => {
+test('manifest is linked on Android but not on iPhone (so Add to Home Screen keeps ?list=)', async ({
+  phone,
+}, testInfo) => {
   const a = await phone();
   const links = await a.$$eval('link[rel=manifest]', (l) => l.map((x) => x.getAttribute('href')));
   if (testInfo.project.name === 'iphone') expect(links).toEqual([]);

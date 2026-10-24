@@ -54,7 +54,10 @@ const test = base.test.extend({
       contexts.push(context);
       // the fake SDK starts with the cloud's documents as they are when the page (re)loads
       await context.route(/firebase-app-compat\.js/, (r) =>
-        r.fulfill({ contentType: 'text/javascript', body: `window.__fakeInit=${JSON.stringify(cloud.docs)};\n${FAKE_SDK}` }),
+        r.fulfill({
+          contentType: 'text/javascript',
+          body: `window.__fakeInit=${JSON.stringify(cloud.docs)};\n${FAKE_SDK}`,
+        }),
       );
       await context.route(/firebase-firestore-compat\.js/, (r) =>
         r.fulfill({ contentType: 'text/javascript', body: '' }),
@@ -66,7 +69,9 @@ const test = base.test.extend({
         if (value === null) delete cloud.docs[docPath];
         else cloud.docs[docPath] = value;
         for (const p of cloud.pages) {
-          await p.evaluate(([k, v]) => window.__fakeApply && window.__fakeApply(k, v), [docPath, value]).catch(() => {});
+          await p
+            .evaluate(([k, v]) => window.__fakeApply && window.__fakeApply(k, v), [docPath, value])
+            .catch(() => {});
         }
       });
       if (storage) {
@@ -166,7 +171,9 @@ async function paste(page, selector, text) {
     ([sel, txt]) => {
       const dt = new DataTransfer();
       dt.setData('text/plain', txt);
-      document.querySelector(sel).dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+      document
+        .querySelector(sel)
+        .dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
     },
     [selector, text],
   );
@@ -189,11 +196,16 @@ const todoRows = (page) =>
   page.$$eval('#tdOpen .td', (e) =>
     e
       .filter((x) => x.offsetParent !== null)
-      .map((x) => (x.classList.contains('hd') ? (x.classList.contains('closed') ? '#▸' : '#') : '') + x.querySelector('.tdt').textContent),
+      .map(
+        (x) =>
+          (x.classList.contains('hd') ? (x.classList.contains('closed') ? '#▸' : '#') : '') +
+          x.querySelector('.tdt').textContent,
+      ),
   );
 const dishNames = (page) => page.$$eval('#dsList .ds > .tdt', (e) => e.map((x) => x.firstChild.textContent));
 const tab = (page, name) => page.tap(`.tab[data-tab="${{ groceries: 'g', todos: 't', recipes: 'd' }[name]}"]`);
-const currentTab = (page) => page.$eval('.tab.on', (e) => ({ g: 'groceries', t: 'todos', d: 'recipes' })[e.dataset.tab]);
+const currentTab = (page) =>
+  page.$eval('.tab.on', (e) => ({ g: 'groceries', t: 'todos', d: 'recipes' })[e.dataset.tab]);
 
 module.exports = {
   test,

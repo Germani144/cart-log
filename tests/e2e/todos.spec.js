@@ -2,7 +2,11 @@
 const { test, expect, LIST, addTodo, todoRows, dragTodo, paste, tab, touch } = require('../fixtures');
 
 const shared = (cloud) => cloud.list(`lists/${LIST}/todos`);
-const ordered = (docs) => docs.filter((t) => !t.done).sort((x, y) => x.order - y.order).map((t) => (t.head ? '#' : '') + t.text);
+const ordered = (docs) =>
+  docs
+    .filter((t) => !t.done)
+    .sort((x, y) => x.order - y.order)
+    .map((t) => (t.head ? '#' : '') + t.text);
 
 test('add, edit in place, tick into Done, untick, delete and clear done', async ({ phone, cloud }) => {
   const a = await phone();
@@ -33,7 +37,10 @@ test('add, edit in place, tick into Done, untick, delete and clear done', async 
   await expect.poll(() => shared(cloud).map((t) => t.text)).toEqual(['Fix drawer in kitchen']);
 });
 
-test('headings: H adds one heading then switches back; bullets for items; deleting a heading asks first', async ({ phone, cloud }) => {
+test('headings: H adds one heading then switches back; bullets for items; deleting a heading asks first', async ({
+  phone,
+  cloud,
+}) => {
   const a = await phone();
   await tab(a, 'todos');
   await a.tap('#tdNew');
@@ -61,8 +68,14 @@ test('headings: H adds one heading then switches back; bullets for items; deleti
 test('pasting several lines adds headings and items; a bare "-" is skipped', async ({ phone }) => {
   const a = await phone();
   await tab(a, 'todos');
-  await paste(a, '#tdNew', 'Stevens\n-\n\nGiant Talon E\n- Bleed brakes\n- Add side bags\n• Change tires\nNS:\n* Bed brake pads ');
-  await expect.poll(() => todoRows(a)).toEqual(['#Stevens', '#Giant Talon E', 'Bleed brakes', 'Add side bags', 'Change tires', '#NS', 'Bed brake pads']);
+  await paste(
+    a,
+    '#tdNew',
+    'Stevens\n-\n\nGiant Talon E\n- Bleed brakes\n- Add side bags\n• Change tires\nNS:\n* Bed brake pads ',
+  );
+  await expect
+    .poll(() => todoRows(a))
+    .toEqual(['#Stevens', '#Giant Talon E', 'Bleed brakes', 'Add side bags', 'Change tires', '#NS', 'Bed brake pads']);
   expect(a.dialogs.pop()).toBe('Add 3 headings and 4 to-dos to "Home"?');
   await expect(a.locator('#tdNew')).toHaveValue('');
 });
@@ -80,7 +93,10 @@ test('hold and drag reorders an item and the other phone gets the same order', a
   expect(ordered(shared(cloud))).toEqual(['two', 'three', 'one', 'four']);
 });
 
-test('dragging a heading moves its whole section; loose items stay on top; items move between sections', async ({ phone, cloud }) => {
+test('dragging a heading moves its whole section; loose items stay on top; items move between sections', async ({
+  phone,
+  cloud,
+}) => {
   const a = await phone();
   await tab(a, 'todos');
   await paste(a, '#tdNew', '- loose\nA\n- a1\n- a2\nB\n- b1\nC\n- c1\n- c2');
@@ -89,7 +105,9 @@ test('dragging a heading moves its whole section; loose items stay on top; items
 
   // the heading stays under the finger while its section is folded away
   const from = await a.evaluate(() => {
-    const r = [...document.querySelectorAll('#tdOpen .td.hd')].find((e) => e.textContent.includes('C')).getBoundingClientRect();
+    const r = [...document.querySelectorAll('#tdOpen .td.hd')]
+      .find((e) => e.textContent.includes('C'))
+      .getBoundingClientRect();
     return { x: r.x + r.width / 3, y: r.y + r.height / 2 };
   });
   const t = await touch(a);
@@ -178,8 +196,17 @@ test('a private list lives under this phone’s own code and never reaches the o
   const me = await a.evaluate(() => JSON.parse(localStorage.getItem('cart-log.me')));
   expect(me).toMatch(/^[A-Z2-9]{8}$/);
   expect(me).not.toBe(LIST);
-  await expect.poll(() => cloud.list(`lists/${me}/todos`).map((t) => t.text).sort()).toEqual(['Bleed brakes', 'New grips']);
-  expect(cloud.list(`lists/${me}/meta`)).toEqual([expect.objectContaining({ kind: 'tl', name: 'Bike fleet', emoji: '🚲' })]);
+  await expect
+    .poll(() =>
+      cloud
+        .list(`lists/${me}/todos`)
+        .map((t) => t.text)
+        .sort(),
+    )
+    .toEqual(['Bleed brakes', 'New grips']);
+  expect(cloud.list(`lists/${me}/meta`)).toEqual([
+    expect.objectContaining({ kind: 'tl', name: 'Bike fleet', emoji: '🚲' }),
+  ]);
   expect(JSON.stringify(cloud.keys(`lists/${LIST}/`).map((k) => cloud.docs[k]))).not.toContain('Bike fleet');
   await expect(b.locator('#tlChips .chip')).toHaveText(['🏠 Home', '＋ New list']);
   // the private code shows only in the menu
