@@ -1,12 +1,13 @@
-// Home log service worker. All apps on germani144.github.io share one CacheStorage,
-// so this worker only ever touches caches named PREFIX* and only handles its own URLs.
+// Home log service worker. Apps on the same address share one CacheStorage, so this worker only ever touches
+// caches named PREFIX* and only handles its own URLs (Home log has its own address, but stays clean anyway).
 const PREFIX = 'cart-log-';
 // "Check for updates" in the app reads the version from this exact line, so keep its spacing:
 // prettier-ignore
 const CACHE=PREFIX+'4.0'; // keep in step with the version label in index.html
 // caches this app used before the prefix existed; safe to remove, nothing else uses these names
 const LEGACY = /^cart-(v\d+|\d+\.\d+)$/;
-const SCOPE = self.registration.scope; // e.g. https://germani144.github.io/cart-log/
+const SCOPE = self.registration.scope; // e.g. https://germani144-home.github.io/cart-log/
+// the app's own files, cached on install so it starts offline (tests/unit/files.spec.js checks this list)
 const SHELL = [
   './',
   'index.html',
