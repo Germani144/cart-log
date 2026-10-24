@@ -12,6 +12,7 @@ const SHELL = [
   'index.html',
   'styles.css',
   'js/ios-manifest.js',
+  'js/logic.js',
   'js/core.js',
   'js/sync.js',
   'js/groceries.js',

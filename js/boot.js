@@ -1,16 +1,20 @@
 // Startup: pick up a ?list= code, draw the app, connect, and register the service worker.
 // ---------- boot ----------
 // (older versions stored the shared database under cl_catalog with single-language names; ignore it)
-const q = new URLSearchParams(location.search).get('list');
+const linkCode = new URLSearchParams(location.search).get('list');
 // a link opened in the browser always wins. The installed app's start address may carry the code it was
 // installed with: use it only if this app has no list yet and wasn't just left (so switching or leaving sticks).
-if (q && cleanCode(q) !== listCode && (!standalone() || (!listCode && cleanCode(q) !== load('cl_left', '')))) {
-  listCode = cleanCode(q);
+if (
+  linkCode &&
+  normalizeListCode(linkCode) !== listCode &&
+  (!isInstalledApp() || (!listCode && normalizeListCode(linkCode) !== load('cl_left', '')))
+) {
+  listCode = normalizeListCode(linkCode);
   save('cl_code', listCode);
-  resetLocal();
+  clearLocalListData();
 }
 keepCodeInUrl();
-setTab(tab);
+setTab(currentTab);
 render();
 connect();
 if ('serviceWorker' in navigator) {
@@ -21,7 +25,7 @@ if ('serviceWorker' in navigator) {
     if (!had || rl) return;
     rl = 1;
     const go = () => {
-      if (drag || document.activeElement?.matches?.('input,textarea')) return setTimeout(go, 1500);
+      if (dragState || document.activeElement?.matches?.('input,textarea')) return setTimeout(go, 1500);
       location.reload();
     };
     go();

@@ -1,124 +1,103 @@
 // To-dos tab: lists (shared and private), headings, folding, editing and hold-and-drag reordering.
-// ---------- to-dos: ordered lists; numbered i., ii., … by position; ticked ones sink to "Done" ----------
+// ---------- to-dos: ordered lists of bulleted items and headings; ticked ones sink to "Done" ----------
 // "Home" (id main) is the original shared list: its to-dos have no list field. Extra lists are described by
 // meta docs "tl_<id>" {id,kind:'tl',name,emoji,ts}: shared ones under the list code (lists/{code}/meta + todos),
 // private ones under this phone's own code (lists/{me}/meta + todos), which only this phone knows.
-const TODO_MAX = 50;
-const TL_EMO = ['📝', '🚲', '🔧', '🏠', '🛒', '💼', '🎁', '✈️', '🏋️', '📚', '🌱', '💡'];
-const tlMain = () => ({
+const MAX_OPEN_TODOS = 50;
+const LIST_ICONS = ['📝', '🚲', '🔧', '🏠', '🛒', '💼', '🎁', '✈️', '🏋️', '📚', '🌱', '💡'];
+const homeList = () => ({
   id: 'main',
   name: 'Home',
   emoji: '🏠',
   priv: false,
-  ...(meta.tl_main ? { name: meta.tl_main.name, emoji: meta.tl_main.emoji, title: meta.tl_main.title } : {}),
+  ...(listMeta.tl_main
+    ? { name: listMeta.tl_main.name, emoji: listMeta.tl_main.emoji, title: listMeta.tl_main.title }
+    : {}),
 });
-function tlAll() {
-  const sh = Object.values(meta)
+function allTodoLists() {
+  const sh = Object.values(listMeta)
     .filter((v) => v.kind === 'tl' && v.id !== 'tl_main')
     .map((v) => ({ ...v, priv: false }));
-  const pr = me
-    ? Object.values(pmeta)
+  const pr = privateCode
+    ? Object.values(privateMeta)
         .filter((v) => v.kind === 'tl')
         .map((v) => ({ ...v, priv: true }))
     : [];
-  return [tlMain(), ...[...sh, ...pr].sort((a, b) => (a.ts || 0) - (b.ts || 0))];
+  return [homeList(), ...[...sh, ...pr].sort((a, b) => (a.ts || 0) - (b.ts || 0))];
 }
-let curTL = load('cl_tdlist', 'main');
-const tlCur = () => tlAll().find((l) => l.id === curTL) || tlMain();
-const tlOf = (id) => tlAll().find((l) => l.id === (id || 'main'));
-const tlView = () => {
-  const l = tlCur();
-  return (l.priv ? ptodos : todos).filter((t) => (t.list || 'main') === l.id);
+let currentListId = load('cl_tdlist', 'main');
+const currentList = () => allTodoLists().find((l) => l.id === currentListId) || homeList();
+const todoListById = (id) => allTodoLists().find((l) => l.id === (id || 'main'));
+const currentListTodos = () => {
+  const l = currentList();
+  return (l.priv ? privateTodos : todos).filter((t) => (t.list || 'main') === l.id);
 };
-const roman = (n) => {
-  let s = '';
-  for (const [v, r] of [
-    [1000, 'm'],
-    [900, 'cm'],
-    [500, 'd'],
-    [400, 'cd'],
-    [100, 'c'],
-    [90, 'xc'],
-    [50, 'l'],
-    [40, 'xl'],
-    [10, 'x'],
-    [9, 'ix'],
-    [5, 'v'],
-    [4, 'iv'],
-    [1, 'i'],
-  ])
-    while (n >= v) {
-      s += r;
-      n -= v;
-    }
-  return s;
-};
-const todoById = (id) => todos.find((t) => t.id === id) || ptodos.find((t) => t.id === id);
-const todoOpen = () =>
-  tlView()
+const todoById = (id) => todos.find((t) => t.id === id) || privateTodos.find((t) => t.id === id);
+const openTodos = () =>
+  currentListTodos()
     .filter((t) => !t.done)
-    .sort((a, b) => (a.order || 0) - (b.order || 0) || (a.ts || 0) - (b.ts || 0) || (a.id < b.id ? -1 : 1));
-let tdEditing = null,
-  tdDirty = false,
-  drag = null,
-  hold = null,
-  suppressClickUntil = 0;
-function putTodo(t) {
-  const l = tlOf(t.list);
+    .sort(compareTodoOrder);
+let editingTodoId = null,
+  todosNeedRedraw = false,
+  dragState = null,
+  pressState = null,
+  ignoreTapsUntil = 0;
+function saveTodo(t) {
+  const l = todoListById(t.list);
   if (!l) return;
   if (l.priv) {
-    const i = ptodos.findIndex((x) => x.id === t.id);
-    if (i < 0) ptodos.push(t);
-    else ptodos[i] = t;
-    save('cl_ptodos', ptodos);
+    const i = privateTodos.findIndex((x) => x.id === t.id);
+    if (i < 0) privateTodos.push(t);
+    else privateTodos[i] = t;
+    save('cl_ptodos', privateTodos);
     renderTodos();
-    putP('todos', t);
+    writePrivate('todos', t);
   } else {
     const i = todos.findIndex((x) => x.id === t.id);
     if (i < 0) todos.push(t);
     else todos[i] = t;
     save('cl_todos', todos);
     renderTodos();
-    put('todos', t);
+    writeShared('todos', t);
   }
 }
 function removeTodo(id) {
-  if (ptodos.some((x) => x.id === id)) {
-    ptodos = ptodos.filter((x) => x.id !== id);
-    save('cl_ptodos', ptodos);
+  if (privateTodos.some((x) => x.id === id)) {
+    privateTodos = privateTodos.filter((x) => x.id !== id);
+    save('cl_ptodos', privateTodos);
     renderTodos();
-    delP('todos', id);
+    deletePrivate('todos', id);
   } else {
     todos = todos.filter((x) => x.id !== id);
     save('cl_todos', todos);
     renderTodos();
-    del('todos', id);
+    deleteShared('todos', id);
   }
 }
 // folded headings: per phone, {headingId:true}
-var tdFolded = load('cl_folded', {});
+var foldedHeadings = load('cl_folded', {});
 // headings (head:true) are section titles inside a list: no tick box, never "done", don't count as to-dos
-const isItem = (t) => !t.head;
+const isTodoItem = (t) => !t.head;
 function addTodo(text, head) {
   text = text.trim();
-  if (!text || (!head && todoOpen().filter(isItem).length >= TODO_MAX)) return false;
-  const l = tlCur();
+  if (!text || (!head && openTodos().filter(isTodoItem).length >= MAX_OPEN_TODOS)) return false;
+  const l = currentList();
   if (!head) {
-    const v = todoOpen();
+    const v = openTodos();
     for (let k = v.length - 1; k >= 0; k--)
       if (v[k].head) {
-        if (tdFolded[v[k].id]) {
-          delete tdFolded[v[k].id];
-          save('cl_folded', tdFolded);
+        if (foldedHeadings[v[k].id]) {
+          delete foldedHeadings[v[k].id];
+          save('cl_folded', foldedHeadings);
         }
         break;
       }
   } // new items land in the last section: unfold it
-  putTodo({
-    id: uid(),
+  saveTodo({
+    id: newId(),
     text,
     done: false,
-    order: tlView().reduce((m, t) => Math.max(m, t.order || 0), 0) + 1000,
+    order: currentListTodos().reduce((m, t) => Math.max(m, t.order || 0), 0) + 1000,
     ts: Date.now(),
     ...(head ? { head: true } : {}),
     ...(l.id === 'main' ? {} : { list: l.id }),
@@ -127,17 +106,17 @@ function addTodo(text, head) {
 }
 function renderTodos() {
   if (!listCode) return;
-  if (drag || tdEditing) {
-    tdDirty = true;
+  if (dragState || editingTodoId) {
+    todosNeedRedraw = true;
     return;
   } // never rebuild the DOM under a finger or a cursor
-  tdDirty = false;
-  drawTL();
-  const open = todoOpen(),
-    done = tlView()
+  todosNeedRedraw = false;
+  drawListChips();
+  const open = openTodos(),
+    done = currentListTodos()
       .filter((t) => t.done)
       .sort((a, b) => (b.ts || 0) - (a.ts || 0));
-  const nItems = open.filter(isItem).length;
+  const nItems = open.filter(isTodoItem).length;
   // folded headings (per phone): their items stay in the list (so drag keeps sections together) but hidden
   const sec = {};
   let cur = null;
@@ -149,7 +128,7 @@ function renderTodos() {
   $('#tdOpen').innerHTML = open.length
     ? open
         .map((t) => {
-          if (t.head) hide = !!tdFolded[t.id];
+          if (t.head) hide = !!foldedHeadings[t.id];
           return t.head
             ? `<div class="td hd${hide ? ' closed' : ''}" data-id="${esc(t.id)}"><button class="hcv" data-hc="${esc(t.id)}" aria-label="${hide ? 'Unfold' : 'Fold'}" aria-expanded="${!hide}">▾</button><div class="tdt" data-xe="${esc(t.id)}">${esc(t.text)}</div>${hide && sec[t.id] ? `<span class="hcn">${sec[t.id]}</span>` : ''}<span class="hdn"></span><button class="x" data-xd="${esc(t.id)}" aria-label="Delete heading">✕</button></div>`
             : `<div class="td${hide ? ' cz' : ''}" data-id="${esc(t.id)}"><button class="tchk" data-xt="${esc(t.id)}" aria-label="Done"></button><span class="rn">•</span><div class="tdt" data-xe="${esc(t.id)}">${esc(t.text)}</div><button class="x" data-xd="${esc(t.id)}" aria-label="Delete">✕</button></div>`;
@@ -166,43 +145,30 @@ function renderTodos() {
         `<div class="td done" data-id="${esc(t.id)}"><button class="tchk" data-xt="${esc(t.id)}" aria-label="Undo">✓</button><div class="tdt">${esc(t.text)}</div><button class="x" data-xd="${esc(t.id)}" aria-label="Delete">✕</button></div>`,
     )
     .join('');
-  const full = nItems >= TODO_MAX && !tdHeadMode;
+  const full = nItems >= MAX_OPEN_TODOS && !headingMode;
   $('#tdNew').disabled = full;
   $('#tdNew').placeholder = full
     ? 'List is full (50). Tick or delete one first'
-    : tdHeadMode
+    : headingMode
       ? 'Add a heading…'
       : 'Add an item…';
-  $('#tdHint').textContent = nItems >= 40 ? `${nItems} of ${TODO_MAX}` : '';
+  $('#tdHint').textContent = nItems >= 40 ? `${nItems} of ${MAX_OPEN_TODOS}` : '';
   $('#cntT').textContent = nItems || '';
 }
 // H button: the next entry becomes a heading; it switches back to normal to-dos after one heading
-var tdHeadMode = false;
-function setHeadMode(on) {
-  tdHeadMode = on;
+var headingMode = false;
+function setHeadingMode(on) {
+  headingMode = on;
   $('#tdHeadBtn').setAttribute('aria-pressed', on);
   $('#tdNew').classList.toggle('hdm', on);
   renderTodos();
 }
 $('#tdHeadBtn').addEventListener('pointerdown', (e) => e.preventDefault()); // keep the keyboard open
 $('#tdHeadBtn').onclick = () => {
-  setHeadMode(!tdHeadMode);
+  setHeadingMode(!headingMode);
   $('#tdNew').focus();
 };
-// paste several lines at once: "- text" (or •, *) lines become to-dos, other lines headings; a bare "-" is skipped
-function parseTodoText(txt) {
-  const out = [];
-  for (let line of txt.split(/\r?\n/)) {
-    line = line.trim();
-    if (!line) continue;
-    const m = /^[-•*–]\s*(.*)$/.exec(line);
-    if (m) {
-      const t = m[1].trim();
-      if (t) out.push({ text: t, head: false });
-    } else out.push({ text: line.replace(/:$/, ''), head: true });
-  }
-  return out;
-}
+// paste several lines at once (see parseTodoText in logic.js)
 $('#tdNew').addEventListener('paste', (e) => {
   const txt = (e.clipboardData || window.clipboardData)?.getData('text') || '';
   if (!/\n/.test(txt.trim())) return; // single line: normal paste
@@ -210,103 +176,107 @@ $('#tdNew').addEventListener('paste', (e) => {
   const rows = parseTodoText(txt),
     nh = rows.filter((r) => r.head).length,
     ni = rows.length - nh;
-  const room = TODO_MAX - todoOpen().filter(isItem).length;
+  const room = MAX_OPEN_TODOS - openTodos().filter(isTodoItem).length;
   if (!rows.length) return;
   if (ni > room)
-    return alert(`That's ${ni} to-dos, but this list only has room for ${room} more (max ${TODO_MAX} open).`);
-  if (!confirm(`Add ${nh} heading${nh === 1 ? '' : 's'} and ${ni} to-do${ni === 1 ? '' : 's'} to "${tlCur().name}"?`))
+    return alert(`That's ${ni} to-dos, but this list only has room for ${room} more (max ${MAX_OPEN_TODOS} open).`);
+  if (
+    !confirm(
+      `Add ${nh} heading${nh === 1 ? '' : 's'} and ${ni} to-do${ni === 1 ? '' : 's'} to "${currentList().name}"?`,
+    )
+  )
     return;
   rows.forEach((r) => addTodo(r.text, r.head));
   $('#tdNew').value = '';
-  setHeadMode(false);
+  setHeadingMode(false);
 });
 $('#tdForm').onsubmit = (e) => {
   e.preventDefault();
   const i = $('#tdNew');
-  if (addTodo(i.value, tdHeadMode)) {
+  if (addTodo(i.value, headingMode)) {
     i.value = '';
-    if (tdHeadMode) setHeadMode(false);
+    if (headingMode) setHeadingMode(false);
   }
   i.focus();
 };
 $('#tdClear').onclick = () => {
-  const d = tlView().filter((t) => t.done);
+  const d = currentListTodos().filter((t) => t.done);
   if (d.length && confirm(`Remove ${d.length} done to-do${d.length > 1 ? 's' : ''}?`))
     d.forEach((t) => removeTodo(t.id));
 };
 
 // list chips: tap to switch, tap the current one to edit it, ＋ to make a new list
-function drawTL() {
-  const ls = tlAll();
-  if (!ls.some((l) => l.id === curTL)) {
-    curTL = 'main';
-    save('cl_tdlist', curTL);
+function drawListChips() {
+  const ls = allTodoLists();
+  if (!ls.some((l) => l.id === currentListId)) {
+    currentListId = 'main';
+    save('cl_tdlist', currentListId);
   }
   $('#tlChips').innerHTML =
     ls
       .map(
         (l) =>
-          `<button type="button" class="chip${l.id === curTL ? ' on' : ''}" data-tl="${esc(l.id)}">${esc(l.emoji || '📝')} ${esc(l.name)}${l.priv ? ' 🔒' : ''}</button>`,
+          `<button type="button" class="chip${l.id === currentListId ? ' on' : ''}" data-tl="${esc(l.id)}">${esc(l.emoji || '📝')} ${esc(l.name)}${l.priv ? ' 🔒' : ''}</button>`,
       )
       .join('') + `<button type="button" class="chip add" data-tl="+">＋ New list</button>`;
-  const c = tlCur();
-  $('#tdTitle').textContent = tlTitle(c) + (c.priv ? ' 🔒' : '');
+  const c = currentList();
+  $('#tdTitle').textContent = listCardTitle(c) + (c.priv ? ' 🔒' : '');
 }
-let tl = null; // dialog state {id|null, name, emoji, priv}
+let listDialog = null; // dialog state {id|null, name, emoji, priv}
 // the title on the list card: its own title if set, else "To do" for Home and the list's name for the others.
 // Tap it to rename; it's stored on the list (shared lists sync it, private ones stay private).
-const tlTitle = (l) => l.title || (l.id === 'main' ? 'To do' : l.name);
+const listCardTitle = (l) => l.title || (l.id === 'main' ? 'To do' : l.name);
 function renameListTitle() {
-  const l = tlCur(),
-    v = prompt('Title of this list', tlTitle(l));
+  const l = currentList(),
+    v = prompt('Title of this list', listCardTitle(l));
   if (v == null) return;
   const t = v.trim().replace(/\s+/g, ' ').slice(0, 40);
   if (l.id === 'main') {
     const d = { id: 'tl_main', kind: 'tlmain', name: l.name, emoji: l.emoji, ...(t ? { title: t } : {}) };
-    meta.tl_main = d;
-    save('cl_meta', meta);
-    put('meta', d);
+    listMeta.tl_main = d;
+    save('cl_meta', listMeta);
+    writeShared('meta', d);
   } else {
-    const src = l.priv ? pmeta : meta,
+    const src = l.priv ? privateMeta : listMeta,
       old = src[l.id];
     if (!old) return;
     const { title, ...rest } = old;
     const d = { ...rest, ...(t ? { title: t } : {}) };
     src[l.id] = d;
     if (l.priv) {
-      save('cl_pmeta', pmeta);
-      putP('meta', d);
+      save('cl_pmeta', privateMeta);
+      writePrivate('meta', d);
     } else {
-      save('cl_meta', meta);
-      put('meta', d);
+      save('cl_meta', listMeta);
+      writeShared('meta', d);
     }
   }
   renderTodos();
 }
 $('#tdTitle').onclick = () => {
-  if (Date.now() >= suppressClickUntil) renameListTitle();
+  if (Date.now() >= ignoreTapsUntil) renameListTitle();
 };
 $('#tdTitle').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') renameListTitle();
 });
-function tlOpen(l) {
-  tl = l ? { id: l.id, emoji: l.emoji || '📝', priv: l.priv } : { id: null, emoji: '📝', priv: true };
+function openListDialog(l) {
+  listDialog = l ? { id: l.id, emoji: l.emoji || '📝', priv: l.priv } : { id: null, emoji: '📝', priv: true };
   $('#tlHead').textContent = l ? 'Edit list' : 'New list';
   $('#tlName').value = l ? l.name : '';
   $('#tlKindBox').hidden = !!l;
   $('#tlDel').hidden = !l || l.id === 'main';
-  tlDraw();
+  drawListDialog();
   $('#tlDlg').showModal();
   $('#tlHead').focus();
 }
-function tlDraw() {
-  $('#tlEmo').innerHTML = TL_EMO.map(
-    (e) => `<button type="button" class="chip${e === tl.emoji ? ' sel' : ''}" data-te="${e}">${e}</button>`,
+function drawListDialog() {
+  $('#tlEmo').innerHTML = LIST_ICONS.map(
+    (e) => `<button type="button" class="chip${e === listDialog.emoji ? ' sel' : ''}" data-te="${e}">${e}</button>`,
   ).join('');
   document
     .querySelectorAll('#tlDlg [data-tk]')
-    .forEach((b) => b.classList.toggle('sel', (b.dataset.tk === 'priv') === tl.priv));
-  $('#tlKindHint').textContent = tl.priv
+    .forEach((b) => b.classList.toggle('sel', (b.dataset.tk === 'priv') === listDialog.priv));
+  $('#tlKindHint').textContent = listDialog.priv
     ? "Stays on your phone's private code: other phones on this list never see it."
     : 'Everyone with the list code sees it, like the Home list.';
 }
@@ -314,106 +284,106 @@ $('#tlChips').addEventListener('click', (e) => {
   const b = e.target.closest('[data-tl]');
   if (!b) return;
   const id = b.dataset.tl;
-  if (id === '+') return tlOpen(null);
-  if (id === curTL) return tlOpen(tlCur());
-  curTL = id;
-  save('cl_tdlist', curTL);
+  if (id === '+') return openListDialog(null);
+  if (id === currentListId) return openListDialog(currentList());
+  currentListId = id;
+  save('cl_tdlist', currentListId);
   renderTodos();
 });
 $('#tlDlg').addEventListener('click', (e) => {
   const em = e.target.closest('[data-te]'),
     k = e.target.closest('[data-tk]');
   if (em) {
-    tl.emoji = em.dataset.te;
-    tlDraw();
+    listDialog.emoji = em.dataset.te;
+    drawListDialog();
   }
   if (k) {
-    tl.priv = k.dataset.tk === 'priv';
-    tlDraw();
+    listDialog.priv = k.dataset.tk === 'priv';
+    drawListDialog();
   }
 });
-function tlSave() {
+function saveListDialog() {
   const name = $('#tlName').value.trim().replace(/\s+/g, ' ').slice(0, 30);
   if (!name) return $('#tlName').focus();
-  if (tl.id === 'main') {
+  if (listDialog.id === 'main') {
     const d = {
       id: 'tl_main',
       kind: 'tlmain',
       name,
-      emoji: tl.emoji,
-      ...(tlMain().title ? { title: tlMain().title } : {}),
+      emoji: listDialog.emoji,
+      ...(homeList().title ? { title: homeList().title } : {}),
     };
-    meta.tl_main = d;
-    save('cl_meta', meta);
-    put('meta', d);
+    listMeta.tl_main = d;
+    save('cl_meta', listMeta);
+    writeShared('meta', d);
   } else {
-    const old = tl.id && tlOf(tl.id),
-      priv = old ? old.priv : tl.priv;
+    const old = listDialog.id && todoListById(listDialog.id),
+      priv = old ? old.priv : listDialog.priv;
     const d = {
-      id: tl.id || 'tl_' + uid(),
+      id: listDialog.id || 'tl_' + newId(),
       kind: 'tl',
       name,
-      emoji: tl.emoji,
+      emoji: listDialog.emoji,
       ts: old ? old.ts : Date.now(),
       ...(old && old.title ? { title: old.title } : {}),
     };
     if (priv) {
-      const first = !me;
+      const first = !privateCode;
       if (first) {
-        me = newCode();
-        save('cl_me', me);
+        privateCode = generateCode();
+        save('cl_me', privateCode);
       } // first private list: this phone gets its own code
-      pmeta[d.id] = d;
-      save('cl_pmeta', pmeta);
-      putP('meta', d);
+      privateMeta[d.id] = d;
+      save('cl_pmeta', privateMeta);
+      writePrivate('meta', d);
       if (first) connect();
     } else {
-      meta[d.id] = d;
-      save('cl_meta', meta);
-      put('meta', d);
+      listMeta[d.id] = d;
+      save('cl_meta', listMeta);
+      writeShared('meta', d);
     }
-    curTL = d.id;
-    save('cl_tdlist', curTL);
+    currentListId = d.id;
+    save('cl_tdlist', currentListId);
   }
   $('#tlDlg').close();
   renderTodos();
 }
-$('#tlSave').onclick = tlSave;
+$('#tlSave').onclick = saveListDialog;
 $('#tlName').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();
-    tlSave();
+    saveListDialog();
   }
 });
 $('#tlCancel').onclick = () => $('#tlDlg').close();
 $('#tlDel').onclick = () => {
-  const l = tlOf(tl.id);
+  const l = todoListById(listDialog.id);
   if (!l || l.id === 'main') return;
-  const mine = (l.priv ? ptodos : todos).filter((t) => t.list === l.id);
+  const mine = (l.priv ? privateTodos : todos).filter((t) => t.list === l.id);
   if (!confirm(`Delete "${l.name}"${mine.length ? ` and its ${mine.length} to-do${mine.length > 1 ? 's' : ''}` : ''}?`))
     return;
   mine.forEach((t) => removeTodo(t.id));
   if (l.priv) {
-    delete pmeta[l.id];
-    save('cl_pmeta', pmeta);
-    delP('meta', l.id);
+    delete privateMeta[l.id];
+    save('cl_pmeta', privateMeta);
+    deletePrivate('meta', l.id);
   } else {
-    delete meta[l.id];
-    save('cl_meta', meta);
-    del('meta', l.id);
+    delete listMeta[l.id];
+    save('cl_meta', listMeta);
+    deleteShared('meta', l.id);
   }
-  curTL = 'main';
-  save('cl_tdlist', curTL);
+  currentListId = 'main';
+  save('cl_tdlist', currentListId);
   $('#tlDlg').close();
   renderTodos();
 };
 
 // tap the text to edit it in place
-function tdEdit(id) {
+function editTodoText(id) {
   const t = todoById(id),
     box = document.querySelector(`#tdOpen .td[data-id="${id}"] .tdt`);
-  if (!t || !box || tdEditing) return;
-  tdEditing = id;
+  if (!t || !box || editingTodoId) return;
+  editingTodoId = id;
   const ta = document.createElement('textarea');
   ta.className = 'tded';
   ta.rows = 1;
@@ -432,9 +402,9 @@ function tdEdit(id) {
   const finish = (save) => {
     if (fin) return;
     fin = true;
-    tdEditing = null;
+    editingTodoId = null;
     const v = ta.value.trim();
-    if (save && v && v !== t.text) putTodo({ ...t, text: v });
+    if (save && v && v !== t.text) saveTodo({ ...t, text: v });
     else renderTodos();
   };
   ta.onkeydown = (e) => {
@@ -450,62 +420,62 @@ function tdEdit(id) {
 
 $('#tdOpen').addEventListener('click', (e) => {
   const b = e.target.closest('[data-hc]');
-  if (!b || Date.now() < suppressClickUntil) return;
+  if (!b || Date.now() < ignoreTapsUntil) return;
   const id = b.dataset.hc;
-  if (tdFolded[id]) delete tdFolded[id];
-  else tdFolded[id] = true;
-  save('cl_folded', tdFolded);
+  if (foldedHeadings[id]) delete foldedHeadings[id];
+  else foldedHeadings[id] = true;
+  save('cl_folded', foldedHeadings);
   renderTodos();
 });
 // hold a row, then drag it. Only a stationary press starts a drag, so normal swipes still scroll the page.
-const lst = $('#tdOpen');
-function tdPress(el, x, y, touch) {
-  tdPressCancel();
+const todoListEl = $('#tdOpen');
+function startPress(el, x, y, touch) {
+  cancelPress();
   const h = { el, x, y, ly: y, touch };
   h.timer = setTimeout(
     () => {
-      if (hold === h) {
-        hold = null;
-        tdBegin(h.el, h.ly);
+      if (pressState === h) {
+        pressState = null;
+        startDrag(h.el, h.ly);
       }
     },
     touch ? 330 : 220,
   );
-  hold = h;
+  pressState = h;
 }
-function tdPressCancel() {
-  if (hold) {
-    clearTimeout(hold.timer);
-    hold = null;
+function cancelPress() {
+  if (pressState) {
+    clearTimeout(pressState.timer);
+    pressState = null;
   }
 }
 // a heading carries its section (the rows after it, up to the next heading): they fold away while dragging,
 // the heading moves past whole sections, and the rows unfold under it when dropped
-const isHd = (n) => n && n.classList.contains('hd');
-function tdBegin(el, y) {
-  if (tdEditing || !el.isConnected) return;
+const isHeadingRow = (n) => n && n.classList.contains('hd');
+function startDrag(el, y) {
+  if (editingTodoId || !el.isConnected) return;
   const group = [];
-  if (isHd(el)) {
-    for (let n = el.nextElementSibling; n && !isHd(n); n = n.nextElementSibling) group.push(n);
+  if (isHeadingRow(el)) {
+    for (let n = el.nextElementSibling; n && !isHeadingRow(n); n = n.nextElementSibling) group.push(n);
   }
   // keep the page the same height while the section is folded, so the heading stays under the finger
   const top0 = el.getBoundingClientRect().top,
     hid = group.reduce((h, n) => h + n.offsetHeight, 0);
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
-  if (hid) lst.style.paddingBottom = hid + 'px';
+  if (hid) todoListEl.style.paddingBottom = hid + 'px';
   group.forEach((n) => (n.style.display = 'none'));
   const shift = el.getBoundingClientRect().top - top0;
   if (Math.abs(shift) > 1) scrollBy(0, shift);
   if (group.length) el.querySelector('.hdn').textContent = `+${group.length} to-do${group.length > 1 ? 's' : ''}`;
-  drag = { el, id: el.dataset.id, startY: y + scrollY, cy: y, raf: 0, group };
+  dragState = { el, id: el.dataset.id, startY: y + scrollY, cy: y, raf: 0, group };
   el.classList.add('lift');
   document.body.classList.add('dragging');
   try {
     navigator.vibrate && navigator.vibrate(12);
   } catch {}
-  drag.raf = requestAnimationFrame(tdAuto);
+  dragState.raf = requestAnimationFrame(autoScrollWhileDragging);
 }
-function tdFlip(n, mut) {
+function animateMove(n, mut) {
   const a = n.offsetTop;
   mut();
   const b = n.offsetTop;
@@ -517,74 +487,74 @@ function tdFlip(n, mut) {
   n.style.transform = '';
 }
 // the block next to the dragged heading: a whole section (heading + rows), or loose rows above the first heading
-function blockAfter(el) {
-  const last = drag.group.length ? drag.group[drag.group.length - 1] : el;
+function sectionBlockAfter(el) {
+  const last = dragState.group.length ? dragState.group[dragState.group.length - 1] : el;
   const f = last.nextElementSibling;
   if (!f) return null;
   const b = [f];
-  for (let n = f.nextElementSibling; n && !isHd(n); n = n.nextElementSibling) b.push(n);
+  for (let n = f.nextElementSibling; n && !isHeadingRow(n); n = n.nextElementSibling) b.push(n);
   return b;
 }
 // loose rows above the first heading stay on top: a section never moves above them
-function blockBefore(el) {
+function sectionBlockBefore(el) {
   const b = [];
   for (let n = el.previousElementSibling; n; n = n.previousElementSibling) {
     b.unshift(n);
-    if (isHd(n)) return b;
+    if (isHeadingRow(n)) return b;
   }
   return null;
 }
-const isVis = (n) => n.offsetParent !== null;
-const blockMid = (b) => {
-  const v = b.filter(isVis);
+const isShown = (n) => n.offsetParent !== null;
+const blockMiddle = (b) => {
+  const v = b.filter(isShown);
   if (!v.length) return -1e9;
   const l = v[v.length - 1];
   return (v[0].offsetTop + l.offsetTop + l.offsetHeight) / 2;
 };
-const blockH = (b) => {
-  const v = b.filter(isVis);
+const blockHeight = (b) => {
+  const v = b.filter(isShown);
   if (!v.length) return 0;
   const l = v[v.length - 1];
   return l.offsetTop + l.offsetHeight - v[0].offsetTop;
 };
-const isFolded = (n) => n && n.classList.contains('closed');
-function itemBlockAfter(el) {
+const isFoldedHeading = (n) => n && n.classList.contains('closed');
+function rowBlockAfter(el) {
   const n = el.nextElementSibling;
   if (!n) return null;
-  if (!isFolded(n)) return [n];
+  if (!isFoldedHeading(n)) return [n];
   const b = [n];
   for (let m = n.nextElementSibling; m && m.classList.contains('cz'); m = m.nextElementSibling) b.push(m);
   return b;
 }
-function itemBlockBefore(el) {
+function rowBlockBefore(el) {
   const n = el.previousElementSibling;
   if (!n) return null;
   if (!n.classList.contains('cz')) return [n];
   const b = [];
   for (let m = n; m; m = m.previousElementSibling) {
     b.unshift(m);
-    if (isHd(m)) break;
+    if (isHeadingRow(m)) break;
   }
   return b;
 }
-function tdApplySection() {
-  const d = drag,
+function moveDraggedSection() {
+  const d = dragState,
     el = d.el;
   for (let g = 0; g < 60; g++) {
     const c = el.offsetTop + el.offsetHeight / 2 + (d.cy + scrollY - d.startY);
-    const nb = blockAfter(el),
-      pb = blockBefore(el);
-    if (nb && c > blockMid(nb)) {
-      const h = blockH(nb);
+    const nb = sectionBlockAfter(el),
+      pb = sectionBlockBefore(el);
+    if (nb && c > blockMiddle(nb)) {
+      const h = blockHeight(nb);
       const ref = el;
-      nb.forEach((n) => tdFlip(n, () => lst.insertBefore(n, ref)));
+      nb.forEach((n) => animateMove(n, () => todoListEl.insertBefore(n, ref)));
       d.startY += h;
       continue;
     }
-    if (pb && c < blockMid(pb)) {
-      const h = blockH(pb);
+    if (pb && c < blockMiddle(pb)) {
+      const h = blockHeight(pb);
       const after = (d.group.length ? d.group[d.group.length - 1] : el).nextSibling;
-      pb.forEach((n) => tdFlip(n, () => lst.insertBefore(n, after)));
+      pb.forEach((n) => animateMove(n, () => todoListEl.insertBefore(n, after)));
       d.startY -= h;
       continue;
     }
@@ -592,26 +562,26 @@ function tdApplySection() {
   }
   el.style.transform = `translateY(${d.cy + scrollY - d.startY}px)`;
 }
-function tdApply() {
-  const d = drag;
+function moveDraggedRow() {
+  const d = dragState;
   if (!d) return;
   const el = d.el;
-  if (isHd(el)) return tdApplySection();
+  if (isHeadingRow(el)) return moveDraggedSection();
   for (let g = 0; g < 60; g++) {
     const c = el.offsetTop + el.offsetHeight / 2 + (d.cy + scrollY - d.startY);
     // a folded section counts as one block (its heading plus hidden items), so an item hops over it whole
-    const nb = itemBlockAfter(el),
-      pb = itemBlockBefore(el);
-    if (nb && c > blockMid(nb)) {
-      const h = blockH(nb);
-      nb.forEach((n) => tdFlip(n, () => lst.insertBefore(n, el)));
+    const nb = rowBlockAfter(el),
+      pb = rowBlockBefore(el);
+    if (nb && c > blockMiddle(nb)) {
+      const h = blockHeight(nb);
+      nb.forEach((n) => animateMove(n, () => todoListEl.insertBefore(n, el)));
       d.startY += h;
       continue;
     }
-    if (pb && c < blockMid(pb)) {
-      const h = blockH(pb),
+    if (pb && c < blockMiddle(pb)) {
+      const h = blockHeight(pb),
         ref = el.nextSibling;
-      pb.forEach((n) => tdFlip(n, () => lst.insertBefore(n, ref)));
+      pb.forEach((n) => animateMove(n, () => todoListEl.insertBefore(n, ref)));
       d.startY -= h;
       continue;
     }
@@ -619,16 +589,16 @@ function tdApply() {
   }
   el.style.transform = `translateY(${d.cy + scrollY - d.startY}px)`;
 }
-function tdMove(y) {
-  if (drag) {
-    drag.cy = y;
-    tdApply();
+function onDragMove(y) {
+  if (dragState) {
+    dragState.cy = y;
+    moveDraggedRow();
   }
 }
-function tdAuto() {
+function autoScrollWhileDragging() {
   // scroll the page while the finger is near the top or bottom edge
-  if (!drag) return;
-  const y = drag.cy,
+  if (!dragState) return;
+  const y = dragState.cy,
     h = innerHeight,
     edge = 90;
   let v = 0;
@@ -637,137 +607,126 @@ function tdAuto() {
   if (v) {
     const b = scrollY;
     scrollBy(0, v);
-    if (scrollY !== b) tdApply();
+    if (scrollY !== b) moveDraggedRow();
   }
-  drag.raf = requestAnimationFrame(tdAuto);
+  dragState.raf = requestAnimationFrame(autoScrollWhileDragging);
 }
-function tdEnd() {
-  const d = drag;
+function endDrag() {
+  const d = dragState;
   if (!d) return;
-  drag = null;
+  dragState = null;
   cancelAnimationFrame(d.raf);
-  suppressClickUntil = Date.now() + 600;
+  ignoreTapsUntil = Date.now() + 600;
   d.el.classList.remove('lift');
   document.body.classList.remove('dragging');
   d.el.style.transform = '';
-  if (isHd(d.el)) {
+  if (isHeadingRow(d.el)) {
     let ref = d.el.nextSibling;
     d.group.forEach((n) => {
-      lst.insertBefore(n, ref);
+      todoListEl.insertBefore(n, ref);
       n.style.display = '';
     }); // unfold under the heading
-    lst.style.paddingBottom = '';
-    return tdCommitSection(
+    todoListEl.style.paddingBottom = '';
+    return commitSectionMove(
       [d.id, ...d.group.map((n) => n.dataset.id)],
-      [...lst.children].map((r) => r.dataset.id),
+      [...todoListEl.children].map((r) => r.dataset.id),
     );
   }
-  tdCommit(
+  commitRowMove(
     d.id,
-    [...lst.children].map((r) => r.dataset.id),
+    [...todoListEl.children].map((r) => r.dataset.id),
   );
 }
+// no room left between two neighbours: every open row gets 1000, 2000, … in screen order
+function renumberAll(ids) {
+  ids.forEach((x, k) => {
+    const q = todoById(x);
+    if (q && q.order !== (k + 1) * 1000) saveTodo({ ...q, order: (k + 1) * 1000 });
+  });
+}
 // a moved section: the heading and its rows get evenly spaced orders between the new neighbours (in their order)
-function tdCommitSection(sec, ids) {
+function commitSectionMove(sec, ids) {
   const i = ids.indexOf(sec[0]),
     j = i + sec.length - 1;
   if (i < 0) return renderTodos();
   const p = i > 0 ? todoById(ids[i - 1]) : null,
-    n = j < ids.length - 1 ? todoById(ids[j + 1]) : null;
-  const a = p ? p.order : null,
-    b = n ? n.order : null,
-    cur = sec.map(todoById);
-  if (cur.some((x) => !x)) return renderTodos();
-  const inPlace =
-    cur.every((x, k) => (k === 0 ? a == null || a < x.order : cur[k - 1].order < x.order)) &&
-    (b == null || cur[cur.length - 1].order < b);
-  if (inPlace) return renderTodos();
-  if (a != null && b != null && (b - a) / (sec.length + 1) < 1e-6) {
-    ids.forEach((x, k) => {
-      const q = todoById(x);
-      if (q && q.order !== (k + 1) * 1000) putTodo({ ...q, order: (k + 1) * 1000 });
-    });
-    return;
-  }
-  const start = a == null ? (b == null ? 0 : b - 1000 * (sec.length + 1)) : a,
-    step = a == null || b == null ? 1000 : (b - a) / (sec.length + 1);
-  cur.forEach((x, k) => putTodo({ ...x, order: start + step * (k + 1) }));
+    n = j < ids.length - 1 ? todoById(ids[j + 1]) : null,
+    rows = sec.map(todoById);
+  if (rows.some((x) => !x)) return renderTodos();
+  const r = ordersForMovedSection(
+    p ? p.order : null,
+    n ? n.order : null,
+    rows.map((x) => x.order),
+  );
+  if (r.keep) return renderTodos();
+  if (r.renumber) return renumberAll(ids);
+  rows.forEach((x, k) => saveTodo({ ...x, order: r.orders[k] }));
 }
 // only the moved row gets a new order value (halfway between its new neighbours), so two phones editing at once don't clash
-function tdCommit(id, ids) {
+function commitRowMove(id, ids) {
   const i = ids.indexOf(id),
     t = todoById(id);
   if (i < 0 || !t) return renderTodos();
   const p = i > 0 ? todoById(ids[i - 1]) : null,
     n = i < ids.length - 1 ? todoById(ids[i + 1]) : null;
-  const a = p ? p.order : null,
-    b = n ? n.order : null;
-  if ((a == null || a < t.order) && (b == null || t.order < b)) return renderTodos();
-  if (a != null && b != null && Math.abs(b - a) < 1e-6) {
-    ids.forEach((x, k) => {
-      const q = todoById(x);
-      if (q && q.order !== (k + 1) * 1000) putTodo({ ...q, order: (k + 1) * 1000 });
-    });
-    return;
-  }
-  putTodo({
-    ...t,
-    order: a == null && b == null ? 1000 : a == null ? b - 1000 : b == null ? a + 1000 : (a + b) / 2,
-  });
+  const r = orderForMovedRow(p ? p.order : null, n ? n.order : null, t.order);
+  if (r.keep) return renderTodos();
+  if (r.renumber) return renumberAll(ids);
+  saveTodo({ ...t, order: r.order });
 }
-lst.addEventListener(
+todoListEl.addEventListener(
   'touchstart',
   (e) => {
     const el = e.target.closest('.td');
-    if (e.touches.length !== 1 || !el || e.target.closest('button,textarea')) return tdPressCancel();
+    if (e.touches.length !== 1 || !el || e.target.closest('button,textarea')) return cancelPress();
     const t = e.touches[0];
-    tdPress(el, t.clientX, t.clientY, true);
+    startPress(el, t.clientX, t.clientY, true);
   },
   { passive: true },
 );
-lst.addEventListener(
+todoListEl.addEventListener(
   'touchmove',
   (e) => {
     const t = e.touches[0];
-    if (drag) {
+    if (dragState) {
       e.preventDefault();
-      tdMove(t.clientY);
+      onDragMove(t.clientY);
       return;
     }
-    if (hold) {
-      if (Math.abs(t.clientX - hold.x) > 8 || Math.abs(t.clientY - hold.y) > 8) tdPressCancel();
-      else hold.ly = t.clientY;
+    if (pressState) {
+      if (Math.abs(t.clientX - pressState.x) > 8 || Math.abs(t.clientY - pressState.y) > 8) cancelPress();
+      else pressState.ly = t.clientY;
     }
   },
   { passive: false },
 );
-const tdTouchEnd = (e) => {
-  if (drag) {
+const onTodoTouchEnd = (e) => {
+  if (dragState) {
     if (e.cancelable) e.preventDefault();
-    tdEnd();
-  } else tdPressCancel();
+    endDrag();
+  } else cancelPress();
 };
-lst.addEventListener('touchend', tdTouchEnd);
-lst.addEventListener('touchcancel', tdTouchEnd);
-lst.addEventListener('contextmenu', (e) => {
+todoListEl.addEventListener('touchend', onTodoTouchEnd);
+todoListEl.addEventListener('touchcancel', onTodoTouchEnd);
+todoListEl.addEventListener('contextmenu', (e) => {
   if (e.target.closest('.td')) e.preventDefault();
 });
-lst.addEventListener('mousedown', (e) => {
+todoListEl.addEventListener('mousedown', (e) => {
   const el = e.target.closest('.td');
   if (e.button !== 0 || !el || e.target.closest('button,textarea')) return;
-  tdPress(el, e.clientX, e.clientY, false);
+  startPress(el, e.clientX, e.clientY, false);
 });
 document.addEventListener('mousemove', (e) => {
-  if (drag) {
-    tdMove(e.clientY);
+  if (dragState) {
+    onDragMove(e.clientY);
     return;
   }
-  if (hold && !hold.touch) {
-    if (Math.abs(e.clientX - hold.x) > 5 || Math.abs(e.clientY - hold.y) > 5) tdPressCancel();
-    else hold.ly = e.clientY;
+  if (pressState && !pressState.touch) {
+    if (Math.abs(e.clientX - pressState.x) > 5 || Math.abs(e.clientY - pressState.y) > 5) cancelPress();
+    else pressState.ly = e.clientY;
   }
 });
 document.addEventListener('mouseup', () => {
-  if (drag) tdEnd();
-  else tdPressCancel();
+  if (dragState) endDrag();
+  else cancelPress();
 });

@@ -1,10 +1,10 @@
 // Firestore: connecting to the list (and this phone's private code) and writing documents.
 // ---------- sync ----------
 function connect() {
-  unsubs.forEach((u) => u());
-  unsubs = [];
-  if (!listCode || !hasCfg()) {
-    setSync();
+  unsubscribers.forEach((u) => u());
+  unsubscribers = [];
+  if (!listCode || !firebaseConfigured()) {
+    showSyncStatus();
     return;
   }
   if (!db) {
@@ -24,13 +24,13 @@ function connect() {
     $('#dot').className = 'dot';
   };
   const watch = (name, apply, code = listCode) =>
-    unsubs.push(
-      colIn(code, name).onSnapshot(
+    unsubscribers.push(
+      collectionFor(code, name).onSnapshot(
         { includeMetadataChanges: true },
         (q) => {
-          pend[(code === listCode ? '' : 'p_') + name] = q.metadata.hasPendingWrites;
+          pendingWrites[(code === listCode ? '' : 'p_') + name] = q.metadata.hasPendingWrites;
           apply(q.docs.map((d) => d.data()));
-          setSync();
+          showSyncStatus();
           render();
         },
         bad,
@@ -49,143 +49,130 @@ function connect() {
     save('cl_dishes', dishes);
   });
   watch('meta', (l) => {
-    meta = {};
-    l.forEach((v) => (meta[v.id] = v));
-    save('cl_meta', meta);
+    listMeta = {};
+    l.forEach((v) => (listMeta[v.id] = v));
+    save('cl_meta', listMeta);
   });
   watch('catalog', (l) => {
-    shared = {};
+    catalog = {};
     l.forEach((v) => {
-      shared[v.id] = v.da ? v : { ...v, da: v.name || v.id, en: '' };
+      catalog[v.id] = v.da ? v : { ...v, da: v.name || v.id, en: '' };
     });
-    save('cl_shared', shared);
+    save('cl_shared', catalog);
   });
   watch('cats', (l) => {
-    customCats = {};
-    l.forEach((v) => (customCats[v.id] = v));
-    save('cl_cats', customCats);
+    customCategories = {};
+    l.forEach((v) => (customCategories[v.id] = v));
+    save('cl_cats', customCategories);
   });
   // private to-do lists live under this phone's own code, which is never shared
-  if (me && me !== listCode) {
+  if (privateCode && privateCode !== listCode) {
     watch(
       'todos',
       (l) => {
-        ptodos = l;
-        save('cl_ptodos', ptodos);
+        privateTodos = l;
+        save('cl_ptodos', privateTodos);
       },
-      me,
+      privateCode,
     );
     watch(
       'meta',
       (l) => {
-        pmeta = {};
-        l.forEach((v) => (pmeta[v.id] = v));
-        save('cl_pmeta', pmeta);
+        privateMeta = {};
+        l.forEach((v) => (privateMeta[v.id] = v));
+        save('cl_pmeta', privateMeta);
       },
-      me,
+      privateCode,
     );
   }
 }
-function setSync() {
-  if (!hasCfg() || !listCode) {
+function showSyncStatus() {
+  if (!firebaseConfigured() || !listCode) {
     $('#sync').textContent = 'local only';
     $('#dot').className = 'dot';
     return;
   }
-  const p = Object.values(pend).some(Boolean);
-  $('#sync').textContent = !online ? 'offline' : p ? 'syncing…' : 'live';
-  $('#dot').className = 'dot ' + (!online ? '' : p ? 'wait' : 'on');
+  const p = Object.values(pendingWrites).some(Boolean);
+  $('#sync').textContent = !isOnline ? 'offline' : p ? 'syncing…' : 'live';
+  $('#dot').className = 'dot ' + (!isOnline ? '' : p ? 'wait' : 'on');
 }
 addEventListener('online', () => {
-  online = true;
-  setSync();
+  isOnline = true;
+  showSyncStatus();
 });
 addEventListener('offline', () => {
-  online = false;
-  setSync();
+  isOnline = false;
+  showSyncStatus();
 });
 
 // ---------- data ops (optimistic locally; Firestore queues writes when offline) ----------
-const put = (name, doc) => {
-  if (db) col(name).doc(doc.id).set(doc).catch(console.error);
+const writeShared = (name, doc) => {
+  if (db) listCollection(name).doc(doc.id).set(doc).catch(console.error);
 };
-const del = (name, id) => {
-  if (db) col(name).doc(id).delete().catch(console.error);
+const deleteShared = (name, id) => {
+  if (db) listCollection(name).doc(id).delete().catch(console.error);
 };
-const putP = (name, doc) => {
-  if (db && me) colIn(me, name).doc(doc.id).set(doc).catch(console.error);
+const writePrivate = (name, doc) => {
+  if (db && privateCode) collectionFor(privateCode, name).doc(doc.id).set(doc).catch(console.error);
 };
-const delP = (name, id) => {
-  if (db && me) colIn(me, name).doc(id).delete().catch(console.error);
+const deletePrivate = (name, id) => {
+  if (db && privateCode) collectionFor(privateCode, name).doc(id).delete().catch(console.error);
 };
-function putItem(it) {
+function saveItem(it) {
   const i = items.findIndex((x) => x.id === it.id);
   if (i < 0) items.push(it);
   else items[i] = it;
   save('cl_items', items);
   render();
-  put('items', it);
+  writeShared('items', it);
 }
 function removeItem(id) {
   items = items.filter((x) => x.id !== id);
   save('cl_items', items);
   render();
-  del('items', id);
+  deleteShared('items', id);
 }
-function upsertShared(e) {
-  shared[e.id] = e;
-  save('cl_shared', shared);
-  put('catalog', e);
+function saveCatalogEntry(e) {
+  catalog[e.id] = e;
+  save('cl_shared', catalog);
+  writeShared('catalog', e);
 }
-function delShared(id) {
-  delete shared[id];
-  save('cl_shared', shared);
-  del('catalog', id);
+function deleteCatalogEntry(id) {
+  delete catalog[id];
+  save('cl_shared', catalog);
+  deleteShared('catalog', id);
 }
-function upsertCat(c) {
-  customCats[c.id] = c;
-  save('cl_cats', customCats);
-  put('cats', c);
+function saveCategory(c) {
+  customCategories[c.id] = c;
+  save('cl_cats', customCategories);
+  writeShared('cats', c);
 }
-function delCat(id) {
-  delete customCats[id];
-  save('cl_cats', customCats);
-  del('cats', id);
+function deleteCategory(id) {
+  delete customCategories[id];
+  save('cl_cats', customCategories);
+  deleteShared('cats', id);
 }
 
-// standard amount+unit of a database entry, and the amount+unit of a list item (older items stored a text "qty")
-const entryDef = (e) => ({ amt: typeof (e && e.amt) === 'number' ? e.amt : 1, unit: (e && e.unit) || 'pcs' });
-function itemQty(it) {
-  if (typeof it.amt === 'number') return { amt: it.amt, unit: it.unit || 'pcs' };
-  const m = /^(\d+(?:[.,]\d+)?)\s*([^\d\s]*)$/.exec((it.qty || '').trim());
-  const d = entryDef(entries()[itemCid(it)]);
-  return m ? { amt: parseAmt(m[1]), unit: unitOf(m[2]) || d.unit } : d;
-}
-const withQty = (it, amt, unit) => {
+// an item's amount and unit (older items stored a text "qty"; see itemAmount in logic.js)
+const itemQuantity = (it) => itemAmount(it, () => standardAmount(itemDatabase()[itemId(it)]));
+const withAmount = (it, amt, unit) => {
   const { qty, ...r } = it;
   return { ...r, amt, unit };
 };
-const STEP = { pcs: 1, pack: 1, can: 1, bottle: 1, bunch: 1, g: 50, kg: 0.5, ml: 50, dl: 1, l: 0.5 };
-function stepVal(a, u, dir) {
-  let st = STEP[u] || 1;
-  if ((u === 'g' || u === 'ml') && a >= 500) st = 100;
-  const n = Math.round((a + dir * st) * 100) / 100;
-  return n < (STEP[u] || 1) ? a : n;
-}
-function stepQty(it, dir) {
-  const { amt, unit } = itemQty(it),
-    n = stepVal(amt, unit, dir);
-  if (n !== amt || typeof it.amt !== 'number') putItem(withQty(it, n, unit));
+function stepItemAmount(it, dir) {
+  const { amt, unit } = itemQuantity(it),
+    n = stepAmount(amt, unit, dir);
+  if (n !== amt || typeof it.amt !== 'number') saveItem(withAmount(it, n, unit));
 }
 // put an item on the to-buy list. typed = {amt,unit?} from "2 l mælk"; setDef = remember this amount/unit as the item's standard
-function addToList(e, typed, setDef) {
-  const cid = keyOf(e.da);
-  if (items.some((i) => !i.done && itemCid(i) === cid)) return;
-  const def = entryDef(e);
+function addToGroceryList(e, typed, setDef) {
+  const cid = itemKey(e.da);
+  if (items.some((i) => !i.done && itemId(i) === cid)) return;
+  const def = standardAmount(e);
   const amt = typed && typed.amt != null ? typed.amt : def.amt,
     unit = typed && typed.unit ? typed.unit : def.unit;
-  const prev = shared[cid];
-  upsertShared({
+  const prev = catalog[cid];
+  saveCatalogEntry({
     id: cid,
     da: e.da,
     en: e.en || '',
@@ -195,7 +182,7 @@ function addToList(e, typed, setDef) {
     n: (prev ? prev.n : 0) + 1,
     at: Date.now(),
   });
-  const inCart = items.find((i) => i.done && itemCid(i) === cid);
+  const inCart = items.find((i) => i.done && itemId(i) === cid);
   const base = { cid, da: e.da, en: e.en || '', cat: e.cat, done: false, ts: Date.now() };
-  putItem(withQty(inCart ? { ...inCart, ...base } : { id: uid(), ...base }, amt, unit));
+  saveItem(withAmount(inCart ? { ...inCart, ...base } : { id: newId(), ...base }, amt, unit));
 }

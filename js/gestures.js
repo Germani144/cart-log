@@ -5,7 +5,7 @@
   document.addEventListener(
     t,
     (e) => {
-      if (Date.now() < suppressClickUntil && !drag) {
+      if (Date.now() < ignoreTapsUntil && !dragState) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -16,32 +16,32 @@
 document.addEventListener(
   'focusin',
   (e) => {
-    if (Date.now() < suppressClickUntil && e.target.matches && e.target.matches('input,textarea')) e.target.blur();
+    if (Date.now() < ignoreTapsUntil && e.target.matches && e.target.matches('input,textarea')) e.target.blur();
   },
   true,
 );
 
 // swipe left/right to change tab, with live feedback: the page follows the finger, a label names the next tab,
 // and it lights up once the swipe is long enough to switch.
-const SWTH = 70;
-const swPane = () => $(PANE[tab]);
-const swBtn = (k) => document.querySelector('.tab[data-tab="' + k + '"]');
-let sw = null;
-function swReset() {
-  const p = sw && sw.p;
+const SWIPE_THRESHOLD = 70;
+const currentPane = () => $(TAB_PANES[currentTab]);
+const tabButton = (k) => document.querySelector('.tab[data-tab="' + k + '"]');
+let swipeState = null;
+function resetSwipe() {
+  const p = swipeState && swipeState.p;
   if (p) {
     p.style.transition = 'transform .18s,opacity .18s';
     p.style.transform = '';
     p.style.opacity = '';
   }
   $('#swh')?.remove();
-  SWT.forEach((k) => swBtn(k)?.classList.remove('nx'));
-  sw = null;
+  TAB_ORDER.forEach((k) => tabButton(k)?.classList.remove('nx'));
+  swipeState = null;
 }
 document.addEventListener(
   'touchstart',
   (e) => {
-    sw = null;
+    swipeState = null;
     if (
       e.touches.length !== 1 ||
       !(
@@ -50,38 +50,38 @@ document.addEventListener(
         e.touches[0].clientX < innerWidth - 24 &&
         listCode &&
         !$('#main').hidden &&
-        !drag
+        !dragState
       )
     )
       return;
     const t = e.touches[0];
-    sw = { x: t.clientX, y: t.clientY, m: 1, d: 0, p: swPane() };
+    swipeState = { x: t.clientX, y: t.clientY, m: 1, d: 0, p: currentPane() };
   },
   { passive: true },
 );
 document.addEventListener(
   'touchmove',
   (e) => {
-    if (!sw) return;
+    if (!swipeState) return;
     const t = e.touches[0],
-      dx = t.clientX - sw.x,
-      dy = t.clientY - sw.y;
-    if (sw.m === 1) {
+      dx = t.clientX - swipeState.x,
+      dy = t.clientY - swipeState.y;
+    if (swipeState.m === 1) {
       if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) {
-        sw = null;
+        swipeState = null;
         return;
       }
       if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
-      sw.m = 2;
-      sw.p.style.transition = 'none';
+      swipeState.m = 2;
+      swipeState.p.style.transition = 'none';
     }
-    const j = SWT.indexOf(tab) + (dx < 0 ? 1 : -1),
-      ok = j >= 0 && j < SWT.length,
-      k = Math.min(1, Math.abs(dx) / SWTH);
-    sw.d = ok ? dx : 0;
-    sw.p.style.transform = `translateX(${dx * (ok ? 0.55 : 0.15)}px)`;
-    sw.p.style.opacity = ok ? 1 - 0.35 * k : 1;
-    SWT.forEach((x, n) => swBtn(x)?.classList.toggle('nx', ok && n === j && k >= 1));
+    const j = TAB_ORDER.indexOf(currentTab) + (dx < 0 ? 1 : -1),
+      ok = j >= 0 && j < TAB_ORDER.length,
+      k = Math.min(1, Math.abs(dx) / SWIPE_THRESHOLD);
+    swipeState.d = ok ? dx : 0;
+    swipeState.p.style.transform = `translateX(${dx * (ok ? 0.55 : 0.15)}px)`;
+    swipeState.p.style.opacity = ok ? 1 - 0.35 * k : 1;
+    TAB_ORDER.forEach((x, n) => tabButton(x)?.classList.toggle('nx', ok && n === j && k >= 1));
     let h = $('#swh');
     if (!h) {
       h = document.createElement('div');
@@ -89,7 +89,7 @@ document.addEventListener(
       document.body.appendChild(h);
     }
     if (ok) {
-      h.textContent = (dx < 0 ? '' : '‹ ') + SWN[SWT[j]] + (dx < 0 ? ' ›' : '');
+      h.textContent = (dx < 0 ? '' : '‹ ') + TAB_NAMES[TAB_ORDER[j]] + (dx < 0 ? ' ›' : '');
       h.className = (dx < 0 ? 'r' : 'l') + (k >= 1 ? ' go' : '');
       h.style.opacity = Math.min(1, k * 1.4);
     } else h.style.opacity = 0;
@@ -99,24 +99,29 @@ document.addEventListener(
 document.addEventListener(
   'touchend',
   () => {
-    if (!sw) return;
-    if (sw.m !== 2) {
-      sw = null;
+    if (!swipeState) return;
+    if (swipeState.m !== 2) {
+      swipeState = null;
       return;
     }
-    const dx = sw.d,
-      j = SWT.indexOf(tab) + (dx < 0 ? 1 : -1);
-    if (Math.abs(dx) >= SWTH && j >= 0 && j < SWT.length && !(drag || Date.now() < suppressClickUntil)) {
-      const p = sw.p;
+    const dx = swipeState.d,
+      j = TAB_ORDER.indexOf(currentTab) + (dx < 0 ? 1 : -1);
+    if (
+      Math.abs(dx) >= SWIPE_THRESHOLD &&
+      j >= 0 &&
+      j < TAB_ORDER.length &&
+      !(dragState || Date.now() < ignoreTapsUntil)
+    ) {
+      const p = swipeState.p;
       p.style.transition = '';
       p.style.transform = '';
       p.style.opacity = '';
       $('#swh')?.remove();
-      SWT.forEach((k) => swBtn(k)?.classList.remove('nx'));
-      sw = null;
-      setTab(SWT[j], j > SWT.indexOf(tab) ? 1 : -1);
-    } else swReset();
+      TAB_ORDER.forEach((k) => tabButton(k)?.classList.remove('nx'));
+      swipeState = null;
+      setTab(TAB_ORDER[j], j > TAB_ORDER.indexOf(currentTab) ? 1 : -1);
+    } else resetSwipe();
   },
   { passive: true },
 );
-document.addEventListener('touchcancel', swReset, { passive: true });
+document.addEventListener('touchcancel', resetSwipe, { passive: true });

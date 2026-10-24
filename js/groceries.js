@@ -1,60 +1,30 @@
 // Groceries tab: adding items, the item dialog (new/edit, categories), the list itself and the item manager.
 // ---------- add flow ----------
-const QTY =
-  /^(\d+(?:[.,]\d+)?)\s*(x|stk|pcs|g|kg|ml|dl|l|liter|pk|pak|pakke|pakker|pack|packs|can|cans|dåse|dåser|fl|flaske|flasker|bottle|bottles|bdt|bunch|bundt)?\s+(\S.*)$/i;
-function parseQty(t) {
-  const m = QTY.exec(t.trim());
-  return m
-    ? { typed: { amt: parseAmt(m[1]), unit: unitOf(m[2]) }, rest: m[3].trim() }
-    : { typed: null, rest: t.trim() };
-}
-function findExact(t) {
-  const f = forms(t);
-  return Object.values(entries()).find((e) => eqAny(forms(e.da), f) || (e.en && eqAny(forms(e.en), f)));
-}
-function submitInput() {
-  const { typed, rest } = parseQty($('#newItem').value.trim());
+// the database entry whose Danish or English name is exactly the typed text
+const findKnownItem = (t) => findExactEntry(Object.values(itemDatabase()), t);
+function submitNewItem() {
+  const { typed, rest } = parseQuantity($('#newItem').value.trim());
   if (!rest) return;
-  const e = findExact(rest);
+  const e = findKnownItem(rest);
   $('#newItem').value = '';
   // unknown items go straight onto the list under Andet/Other; tap the item later to set category, English name and standard amount
-  if (e) addToList(e, typed, false);
-  else addToList({ da: rest[0].toUpperCase() + rest.slice(1), en: '', cat: 'andet' }, typed, true);
-  suggest();
+  if (e) addToGroceryList(e, typed, false);
+  else addToGroceryList({ da: rest[0].toUpperCase() + rest.slice(1), en: '', cat: 'andet' }, typed, true);
+  showSuggestions();
 }
 const nameHtml = (da, en) =>
   `<b class="da">${esc(da)}</b>` +
-  (en && eqAny(forms(en), forms(da)) === false ? `<span class="en">${esc(en)}</span>` : '');
-const catName = (id) => {
-  const c = catInfo(id);
+  (en && anyEqual(searchForms(en), searchForms(da)) === false ? `<span class="en">${esc(en)}</span>` : '');
+const categoryLabel = (id) => {
+  const c = categoryInfo(id);
   return esc(c.da) + (c.en && c.en !== c.da ? ` · ${esc(c.en)}` : '');
 };
-// best matches for typed text among database entries: name starts with it, then contains it, then its category does
-function searchEntries(c, rest) {
-  const q = forms(rest);
-  return c
-    .map((e) => {
-      const nf = [...forms(e.da), ...forms(e.en)],
-        cf = ((ci) => [...forms(ci.da), ...forms(ci.en || '')])(catInfo(e.cat));
-      const tier = startsAny(nf, q) ? 0 : hasAny(nf, q) ? 1 : hasAny(cf, q) ? 2 : 9;
-      return { e, tier };
-    })
-    .filter((x) => x.tier < 9)
-    .sort(
-      (a, b) =>
-        a.tier - b.tier ||
-        (b.e.n || 0) - (a.e.n || 0) ||
-        a.e.da.length - b.e.da.length ||
-        a.e.da.localeCompare(b.e.da, 'da'),
-    )
-    .slice(0, 8);
-}
-function suggest() {
+function showSuggestions() {
   const raw = $('#newItem').value.trim(),
-    { rest } = parseQty(raw),
+    { rest } = parseQuantity(raw),
     box = $('#chips');
-  const onList = new Set(items.filter((i) => !i.done).map(itemCid));
-  let c = Object.values(entries()).filter((e) => !onList.has(e.id));
+  const onList = new Set(items.filter((i) => !i.done).map(itemId));
+  let c = Object.values(itemDatabase()).filter((e) => !onList.has(e.id));
   if (!rest) {
     c = c.filter((e) => e.n > 0).sort((a, b) => b.n - a.n || b.at - a.at);
     box.className = 'chips';
@@ -64,66 +34,66 @@ function suggest() {
       .join('');
     return;
   }
-  const scored = searchEntries(c, rest);
+  const scored = rankEntries(c, rest, categoryInfo);
   box.className = 'sugg';
   box.innerHTML =
     scored
       .map(
         ({ e }) =>
-          `<div class="sg" data-c="${esc(e.id)}"><span>${nameHtml(e.da, e.en)}</span><span class="cat">${esc(catInfo(e.cat).da)}</span></div>`,
+          `<div class="sg" data-c="${esc(e.id)}"><span>${nameHtml(e.da, e.en)}</span><span class="cat">${esc(categoryInfo(e.cat).da)}</span></div>`,
       )
-      .join('') + (findExact(rest) ? '' : `<div class="sg new" data-new="1">＋ Add “${esc(rest)}”</div>`);
+      .join('') + (findKnownItem(rest) ? '' : `<div class="sg new" data-new="1">＋ Add “${esc(rest)}”</div>`);
 }
 
 // ---------- item dialog (new + edit) ----------
-function openDlg(s) {
-  dlgState = {
+function openItemDialog(s) {
+  itemDialog = {
     mode: s.mode,
     id: s.id || null,
     sel: s.cat || '',
     newCat: null,
     unit: s.unit || 'pcs',
-    catColor: s.cat && customCats[s.cat] ? safeColor(customCats[s.cat].color) : null,
+    catColor: s.cat && customCategories[s.cat] ? safeColor(customCategories[s.cat].color) : null,
     colorTouched: false,
   };
   $('#cdDa').value = s.da || '';
   $('#cdEn').value = s.en || '';
-  $('#cdAmt').value = fmt(s.amt ?? 1);
+  $('#cdAmt').value = formatAmount(s.amt ?? 1);
   $('#cdNewDa').value = '';
   $('#cdNewEn').value = '';
   $('#cdHint').textContent = '';
   $('#cdTitle').textContent = s.mode === 'new' ? 'New item' : 'Edit item';
   $('#cdDel').hidden = s.mode !== 'edit';
   // forgetting only makes sense for items you added yourself; built-in items always stay in the database
-  const own = s.mode === 'edit' && !seedItems[keyOf(s.da || '')];
+  const own = s.mode === 'edit' && !builtInItems[itemKey(s.da || '')];
   $('#cdForget').hidden = !own;
   $('#cdForgetHint').hidden = !own;
-  drawCats();
-  drawUnits();
+  drawCategoryChips();
+  drawUnitChips();
   $('#catDlg').showModal();
 }
-function drawCats() {
-  $('#cdCats').innerHTML = allCats()
+function drawCategoryChips() {
+  $('#cdCats').innerHTML = allCategories()
     .map(
       (c) =>
-        `<button type="button" class="chip${c.id === dlgState.sel ? ' sel' : ''}" data-cc="${esc(c.id)}" style="--c:${safeColor(c.color)}"><span class="cd"></span>${nameHtml(c.da, c.en)}</button>`,
+        `<button type="button" class="chip${c.id === itemDialog.sel ? ' sel' : ''}" data-cc="${esc(c.id)}" style="--c:${safeColor(c.color)}"><span class="cd"></span>${nameHtml(c.da, c.en)}</button>`,
     )
     .join('');
-  $('#cdSave').disabled = !dlgState.sel || !($('#cdDa').value.trim() || $('#cdEn').value.trim());
-  drawColors();
+  $('#cdSave').disabled = !itemDialog.sel || !($('#cdDa').value.trim() || $('#cdEn').value.trim());
+  drawColorChoices();
 }
 // color choice appears when creating a category, or when the selected category is one of your own
-function drawPrev() {
-  const st = dlgState,
-    nm = st.newCat || customCats[st.sel];
+function drawCategoryPreview() {
+  const st = itemDialog,
+    nm = st.newCat || customCategories[st.sel];
   if (!nm) return;
   const cur = safeColor(st.catColor);
-  $('#cdPrev').setAttribute('style', `--c:${cur};--t:${textOn(cur)};margin-top:10px;border-radius:10px`);
+  $('#cdPrev').setAttribute('style', `--c:${cur};--t:${textColorOn(cur)};margin-top:10px;border-radius:10px`);
   $('#cdPrev').innerHTML = `<b>${esc(nm.da)}</b>${nm.en ? `<span class="en">${esc(nm.en)}</span>` : ''}`;
 }
-function drawColors() {
-  const st = dlgState,
-    custom = st.newCat || (st.sel && customCats[st.sel]);
+function drawColorChoices() {
+  const st = itemDialog,
+    custom = st.newCat || (st.sel && customCategories[st.sel]);
   $('#cdColorWrap').hidden = !custom;
   if (!custom) return;
   const cur = safeColor(st.catColor).toLowerCase();
@@ -132,126 +102,129 @@ function drawColors() {
       (c) =>
         `<button type="button" class="swb${c.toLowerCase() === cur ? ' sel' : ''}" data-sw="${c}" style="background:${c}" aria-label="Color ${c}"></button>`,
     ).join('') + `<input type="color" id="cdColorPick" value="${cur}" aria-label="Pick any color">`;
-  drawPrev();
+  drawCategoryPreview();
 }
 $('#cdColors').addEventListener('input', (e) => {
   if (e.target.id === 'cdColorPick') {
-    dlgState.catColor = e.target.value;
-    dlgState.colorTouched = true;
-    drawPrev();
+    itemDialog.catColor = e.target.value;
+    itemDialog.colorTouched = true;
+    drawCategoryPreview();
   }
 });
 $('#cdColors').addEventListener('change', (e) => {
-  if (e.target.id === 'cdColorPick') drawColors();
+  if (e.target.id === 'cdColorPick') drawColorChoices();
 });
-function drawUnits() {
+function drawUnitChips() {
   $('#cdUnits').innerHTML = UNITS.map(
-    (u) => `<button type="button" class="chip${u === dlgState.unit ? ' sel' : ''}" data-un="${u}">${u}</button>`,
+    (u) => `<button type="button" class="chip${u === itemDialog.unit ? ' sel' : ''}" data-un="${u}">${u}</button>`,
   ).join('');
 }
-function updateNewCat() {
+function updateNewCategory() {
   const da = $('#cdNewDa').value.trim(),
     en = $('#cdNewEn').value.trim();
   if (!da) {
-    if (dlgState.newCat) dlgState.sel = '';
-    dlgState.newCat = null;
-    if (!customCats[dlgState.sel]) dlgState.catColor = null;
+    if (itemDialog.newCat) itemDialog.sel = '';
+    itemDialog.newCat = null;
+    if (!customCategories[itemDialog.sel]) itemDialog.catColor = null;
     $('#cdHint').textContent = '';
-    drawCats();
+    drawCategoryChips();
     return;
   }
-  const f = forms(da),
-    hit = allCats().find((c) => eqAny(forms(c.da), f) || (c.en && eqAny(forms(c.en), f)));
+  const hit = findExactEntry(allCategories(), da);
   if (hit) {
-    dlgState.sel = hit.id;
-    dlgState.newCat = null;
-    dlgState.catColor = customCats[hit.id] ? safeColor(customCats[hit.id].color) : null;
+    itemDialog.sel = hit.id;
+    itemDialog.newCat = null;
+    itemDialog.catColor = customCategories[hit.id] ? safeColor(customCategories[hit.id].color) : null;
     $('#cdHint').textContent = `Using existing category “${hit.da}”`;
   } else {
-    const id = 'c_' + keyOf(da);
-    dlgState.newCat = { id, da, en };
-    dlgState.sel = id;
-    if (!dlgState.colorTouched || !dlgState.catColor) dlgState.catColor = hashColor(da);
+    const id = 'c_' + itemKey(da);
+    itemDialog.newCat = { id, da, en };
+    itemDialog.sel = id;
+    if (!itemDialog.colorTouched || !itemDialog.catColor) itemDialog.catColor = colorForName(da, PALETTE);
     $('#cdHint').textContent = `Will create category “${da}”`;
   }
-  drawCats();
+  drawCategoryChips();
 }
-$('#cdNewDa').oninput = updateNewCat;
-$('#cdNewEn').oninput = updateNewCat;
-$('#cdDa').oninput = drawCats;
-$('#cdEn').oninput = drawCats;
+$('#cdNewDa').oninput = updateNewCategory;
+$('#cdNewEn').oninput = updateNewCategory;
+$('#cdDa').oninput = drawCategoryChips;
+$('#cdEn').oninput = drawCategoryChips;
 $('#qPlus').onclick = () => {
-  $('#cdAmt').value = fmt(stepVal(parseAmt($('#cdAmt').value), dlgState.unit, 1));
+  $('#cdAmt').value = formatAmount(stepAmount(parseAmount($('#cdAmt').value), itemDialog.unit, 1));
 };
 $('#qMinus').onclick = () => {
-  $('#cdAmt').value = fmt(stepVal(parseAmt($('#cdAmt').value), dlgState.unit, -1));
+  $('#cdAmt').value = formatAmount(stepAmount(parseAmount($('#cdAmt').value), itemDialog.unit, -1));
 };
 $('#cdSave').onclick = () => {
   let da = $('#cdDa').value.trim(),
     en = $('#cdEn').value.trim();
-  const amt = parseAmt($('#cdAmt').value),
-    unit = dlgState.unit,
-    cat = dlgState.sel;
+  const amt = parseAmount($('#cdAmt').value),
+    unit = itemDialog.unit,
+    cat = itemDialog.sel;
   if (!da) {
     da = en;
     en = '';
   }
   if (!da || !cat) return;
-  if (dlgState.newCat) upsertCat({ ...dlgState.newCat, color: safeColor(dlgState.catColor) });
-  else if (customCats[cat] && dlgState.catColor && safeColor(dlgState.catColor) !== safeColor(customCats[cat].color))
-    upsertCat({ ...customCats[cat], color: safeColor(dlgState.catColor) });
-  if (dlgState.mode === 'new') addToList({ da, en, cat }, { amt, unit }, true);
+  if (itemDialog.newCat) saveCategory({ ...itemDialog.newCat, color: safeColor(itemDialog.catColor) });
+  else if (
+    customCategories[cat] &&
+    itemDialog.catColor &&
+    safeColor(itemDialog.catColor) !== safeColor(customCategories[cat].color)
+  )
+    saveCategory({ ...customCategories[cat], color: safeColor(itemDialog.catColor) });
+  if (itemDialog.mode === 'new') addToGroceryList({ da, en, cat }, { amt, unit }, true);
   else {
-    const it = items.find((x) => x.id === dlgState.id);
+    const it = items.find((x) => x.id === itemDialog.id);
     if (it) {
-      const cid = keyOf(da),
-        prev = shared[cid];
-      putItem(withQty({ ...it, cid, da, en, cat }, amt, unit));
-      upsertShared({ id: cid, da, en, cat, amt, unit, n: prev ? prev.n : 1, at: Date.now() });
+      const cid = itemKey(da),
+        prev = catalog[cid];
+      saveItem(withAmount({ ...it, cid, da, en, cat }, amt, unit));
+      saveCatalogEntry({ id: cid, da, en, cat, amt, unit, n: prev ? prev.n : 1, at: Date.now() });
     }
   }
   $('#catDlg').close();
-  suggest();
+  showSuggestions();
 };
 $('#cdCancel').onclick = () => $('#catDlg').close();
 $('#cdDel').onclick = () => {
-  removeItem(dlgState.id);
+  removeItem(itemDialog.id);
   $('#catDlg').close();
 };
 $('#cdForget').onclick = () => {
-  const it = items.find((x) => x.id === dlgState.id);
+  const it = items.find((x) => x.id === itemDialog.id);
   if (!it) return $('#catDlg').close();
-  const cid = itemCid(it);
-  items.filter((x) => itemCid(x) === cid).forEach((x) => removeItem(x.id));
-  if (shared[cid]) delShared(cid);
+  const cid = itemId(it);
+  items.filter((x) => itemId(x) === cid).forEach((x) => removeItem(x.id));
+  if (catalog[cid]) deleteCatalogEntry(cid);
   $('#catDlg').close();
-  suggest();
+  showSuggestions();
 };
 
 // ---------- list UI ----------
-function row(it) {
-  const { amt, unit } = itemQty(it);
+function itemRowHtml(it) {
+  const { amt, unit } = itemQuantity(it);
   const ctl = it.done
-    ? `<span class="ql">${fmt(amt)} ${esc(unit)}</span>`
-    : `<div class="step"><button class="sb" data-qm="${esc(it.id)}" aria-label="Less">−</button><button class="qv" data-e="${esc(it.id)}" aria-label="Edit amount"><b>${fmt(amt)}</b><small>${esc(unit)}</small></button><button class="sb" data-qp="${esc(it.id)}" aria-label="More">+</button></div>`;
-  return `<div class="item ${it.done ? 'done' : ''}" style="${catStyle(it.cat || 'andet')}">
+    ? `<span class="ql">${formatAmount(amt)} ${esc(unit)}</span>`
+    : `<div class="step"><button class="sb" data-qm="${esc(it.id)}" aria-label="Less">−</button><button class="qv" data-e="${esc(it.id)}" aria-label="Edit amount"><b>${formatAmount(amt)}</b><small>${esc(unit)}</small></button><button class="sb" data-qp="${esc(it.id)}" aria-label="More">+</button></div>`;
+  return `<div class="item ${it.done ? 'done' : ''}" style="${categoryStyle(it.cat || 'andet')}">
     <button class="chk" data-t="${esc(it.id)}" aria-label="Toggle">${it.done ? '✓' : ''}</button>
-    <div class="txt" data-e="${esc(it.id)}">${nameHtml(itemDa(it), it.en)}</div>
+    <div class="txt" data-e="${esc(it.id)}">${nameHtml(itemName(it), it.en)}</div>
     ${ctl}
     <button class="x" data-d="${esc(it.id)}" aria-label="Delete">✕</button></div>`;
 }
-function groups(list) {
+function groupByCategory(list) {
   const m = {};
   list.forEach((i) => (m[i.cat || 'andet'] ??= []).push(i));
   return Object.keys(m)
-    .sort((a, b) => catRank(a) - catRank(b) || catInfo(a).da.localeCompare(catInfo(b).da, 'da'))
+    .sort((a, b) => categoryRank(a) - categoryRank(b) || categoryInfo(a).da.localeCompare(categoryInfo(b).da, 'da'))
     .map((c) => [c, m[c].sort((a, b) => a.ts - b.ts)]);
 }
 function render() {
   if (!listCode) {
     $('#setup').hidden = false;
     $('#main').hidden = true;
-    $('#cfgWarn').hidden = hasCfg();
+    $('#cfgWarn').hidden = firebaseConfigured();
     return;
   }
   $('#setup').hidden = true;
@@ -259,25 +232,27 @@ function render() {
   const todo = items.filter((i) => !i.done),
     done = items.filter((i) => i.done).sort((a, b) => b.ts - a.ts);
   $('#todo').innerHTML = todo.length
-    ? groups(todo)
+    ? groupByCategory(todo)
         .map(([c, l]) => {
-          const ci = catInfo(c);
-          return `<div style="${catStyle(c)}"><div class="gh"><b>${esc(ci.da)}</b>${ci.en && ci.en !== ci.da ? `<span class="en">${esc(ci.en)}</span>` : ''} · ${l.length}${c === 'andet' ? '<span class="ghh">tap an item to set it up</span>' : ''}</div>${l.map(row).join('')}</div>`;
+          const ci = categoryInfo(c);
+          return `<div style="${categoryStyle(c)}"><div class="gh"><b>${esc(ci.da)}</b>${ci.en && ci.en !== ci.da ? `<span class="en">${esc(ci.en)}</span>` : ''} · ${l.length}${c === 'andet' ? '<span class="ghh">tap an item to set it up</span>' : ''}</div>${l.map(itemRowHtml).join('')}</div>`;
         })
         .join('')
     : '<div class="empty">Nothing to buy 🎉<br>Add something above.</div>';
   $('#todoH').textContent = 'To buy' + (todo.length ? ` · ${todo.length}` : '');
   $('#doneHead').hidden = $('#done').hidden = !done.length;
-  $('#done').innerHTML = done.map(row).join('');
+  $('#done').innerHTML = done.map(itemRowHtml).join('');
   $('#doneH').textContent = `In the cart · ${done.length}`;
-  suggest();
+  showSuggestions();
   $('#cntG').textContent = todo.length || '';
   renderTodos();
   renderDishes();
 }
-function drawMgr() {
-  const s = Object.values(shared).sort((a, b) => catRank(a.cat) - catRank(b.cat) || a.da.localeCompare(b.da, 'da'));
-  const c = Object.values(customCats).sort((a, b) => a.da.localeCompare(b.da, 'da'));
+function drawManager() {
+  const s = Object.values(catalog).sort(
+    (a, b) => categoryRank(a.cat) - categoryRank(b.cat) || a.da.localeCompare(b.da, 'da'),
+  );
+  const c = Object.values(customCategories).sort((a, b) => a.da.localeCompare(b.da, 'da'));
   $('#mgrList').innerHTML =
     `<div class="mh">Categories you created</div>` +
     (c.length
@@ -293,7 +268,7 @@ function drawMgr() {
       ? s
           .map(
             (e) =>
-              `<div class="mrow"><div>${nameHtml(e.da, e.en)}<div class="mu">${catName(e.cat)}</div></div><button class="x" data-md="${esc(e.id)}" aria-label="Remove">✕</button></div>`,
+              `<div class="mrow"><div>${nameHtml(e.da, e.en)}<div class="mu">${categoryLabel(e.cat)}</div></div><button class="x" data-md="${esc(e.id)}" aria-label="Remove">✕</button></div>`,
           )
           .join('')
       : '<div class="mu">None yet.</div>');
@@ -307,20 +282,20 @@ document.addEventListener('click', (e) => {
   const D = t.dataset;
   if (D.t) {
     const it = items.find((x) => x.id === D.t);
-    if (it) putItem({ ...it, done: !it.done, ts: Date.now() });
+    if (it) saveItem({ ...it, done: !it.done, ts: Date.now() });
   } else if (D.qp || D.qm) {
     const it = items.find((x) => x.id === (D.qp || D.qm));
-    if (it) stepQty(it, D.qp ? 1 : -1);
+    if (it) stepItemAmount(it, D.qp ? 1 : -1);
   } else if (D.d) {
     removeItem(D.d);
   } else if (D.e) {
     const it = items.find((x) => x.id === D.e);
     if (it) {
-      const q = itemQty(it);
-      openDlg({
+      const q = itemQuantity(it);
+      openItemDialog({
         mode: 'edit',
         id: it.id,
-        da: itemDa(it),
+        da: itemName(it),
         en: it.en || '',
         amt: q.amt,
         unit: q.unit,
@@ -328,58 +303,58 @@ document.addEventListener('click', (e) => {
       });
     }
   } else if (D.un) {
-    dlgState.unit = D.un;
-    drawUnits();
+    itemDialog.unit = D.un;
+    drawUnitChips();
   } else if (D.c) {
-    const en = entries()[D.c];
+    const en = itemDatabase()[D.c];
     if (en) {
-      addToList(en, parseQty($('#newItem').value.trim()).typed, false);
+      addToGroceryList(en, parseQuantity($('#newItem').value.trim()).typed, false);
       $('#newItem').value = '';
-      suggest();
+      showSuggestions();
     }
   } else if (D.new !== undefined) {
-    submitInput();
+    submitNewItem();
   } else if (D.cc !== undefined) {
-    dlgState.sel = D.cc;
-    dlgState.newCat = null;
-    dlgState.colorTouched = false;
-    dlgState.catColor = customCats[D.cc] ? safeColor(customCats[D.cc].color) : null;
+    itemDialog.sel = D.cc;
+    itemDialog.newCat = null;
+    itemDialog.colorTouched = false;
+    itemDialog.catColor = customCategories[D.cc] ? safeColor(customCategories[D.cc].color) : null;
     $('#cdNewDa').value = '';
     $('#cdNewEn').value = '';
     $('#cdHint').textContent = '';
-    drawCats();
+    drawCategoryChips();
   } else if (D.sw) {
-    dlgState.catColor = D.sw;
-    dlgState.colorTouched = true;
-    drawColors();
+    itemDialog.catColor = D.sw;
+    itemDialog.colorTouched = true;
+    drawColorChoices();
   } else if (D.xt) {
-    if (Date.now() < suppressClickUntil) return;
+    if (Date.now() < ignoreTapsUntil) return;
     const t = todoById(D.xt);
-    if (t) putTodo({ ...t, done: !t.done, ts: Date.now() });
+    if (t) saveTodo({ ...t, done: !t.done, ts: Date.now() });
   } else if (D.xd) {
-    if (Date.now() < suppressClickUntil) return;
+    if (Date.now() < ignoreTapsUntil) return;
     const t = todoById(D.xd);
     if (t && t.head && !confirm(`Delete the heading "${t.text}"? Its to-dos stay in the list.`)) return;
     removeTodo(D.xd);
   } else if (D.xe) {
-    if (Date.now() < suppressClickUntil) return;
-    tdEdit(D.xe);
+    if (Date.now() < ignoreTapsUntil) return;
+    editTodoText(D.xe);
   } else if (D.md) {
-    delShared(D.md);
-    drawMgr();
+    deleteCatalogEntry(D.md);
+    drawManager();
     render();
   } else if (D.mc) {
-    delCat(D.mc);
-    drawMgr();
+    deleteCategory(D.mc);
+    drawManager();
     render();
   }
 });
 $('#addForm').onsubmit = (e) => {
   e.preventDefault();
-  submitInput();
+  submitNewItem();
   $('#newItem').focus();
 };
-$('#newItem').oninput = suggest;
+$('#newItem').oninput = showSuggestions;
 $('#clearDone').onclick = () => {
   const d = items.filter((i) => i.done);
   if (d.length && confirm(`Remove ${d.length} item${d.length > 1 ? 's' : ''} from the cart?`))

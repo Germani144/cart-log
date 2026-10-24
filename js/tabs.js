@@ -2,15 +2,15 @@
 // ---------- on-screen keyboard: keep dialogs inside the visible area ----------
 // The keyboard shrinks the visual viewport; track its height/offset in CSS vars and flag "kb" while it's up.
 // The field being typed in is scrolled to the top of its dialog so what's below it (suggestions) stays visible.
-let vvMax = 0;
+let tallestViewport = 0;
 function fitViewport() {
   const v = window.visualViewport;
   if (!v) return;
-  vvMax = Math.max(vvMax, v.height);
+  tallestViewport = Math.max(tallestViewport, v.height);
   const r = document.documentElement;
   r.style.setProperty('--vvh', v.height + 'px');
   r.style.setProperty('--vvt', v.offsetTop + 'px');
-  r.classList.toggle('kb', v.height < vvMax * 0.78);
+  r.classList.toggle('kb', v.height < tallestViewport * 0.78);
 }
 if (window.visualViewport) {
   visualViewport.addEventListener('resize', fitViewport);
@@ -18,7 +18,7 @@ if (window.visualViewport) {
   fitViewport();
 }
 addEventListener('orientationchange', () => {
-  vvMax = 0;
+  tallestViewport = 0;
   setTimeout(fitViewport, 300);
 });
 document.addEventListener('focusin', (e) => {
@@ -34,22 +34,22 @@ document.addEventListener('focusin', (e) => {
 });
 
 // ---------- tabs ----------
-const SWT = ['g', 't', 'd'],
-  SWN = { g: 'Groceries', t: 'To-dos', d: 'Recipes' },
-  PANE = { g: '#paneG', t: '#paneT', d: '#paneD' };
-let tab = load('cl_tab', 'g');
+const TAB_ORDER = ['g', 't', 'd'],
+  TAB_NAMES = { g: 'Groceries', t: 'To-dos', d: 'Recipes' },
+  TAB_PANES = { g: '#paneG', t: '#paneT', d: '#paneD' };
+let currentTab = load('cl_tab', 'g');
 function setTab(t, dir) {
-  const prev = tab;
-  tab = SWT.includes(t) ? t : 'g';
-  save('cl_tab', tab);
-  SWT.forEach((k) => ($(PANE[k]).hidden = k !== tab));
+  const prev = currentTab;
+  currentTab = TAB_ORDER.includes(t) ? t : 'g';
+  save('cl_tab', currentTab);
+  TAB_ORDER.forEach((k) => ($(TAB_PANES[k]).hidden = k !== currentTab));
   document.querySelectorAll('.tab').forEach((b) => {
-    const on = b.dataset.tab === tab;
+    const on = b.dataset.tab === currentTab;
     b.classList.toggle('on', on);
     b.setAttribute('aria-selected', on);
   });
-  if (dir && prev !== tab) {
-    const p = $(PANE[tab]);
+  if (dir && prev !== currentTab) {
+    const p = $(TAB_PANES[currentTab]);
     p.classList.remove('inL', 'inR');
     void p.offsetWidth;
     p.classList.add(dir > 0 ? 'inR' : 'inL');
@@ -58,5 +58,7 @@ function setTab(t, dir) {
 document
   .querySelectorAll('.tab')
   .forEach((b) =>
-    b.addEventListener('click', () => setTab(b.dataset.tab, SWT.indexOf(b.dataset.tab) > SWT.indexOf(tab) ? 1 : -1)),
+    b.addEventListener('click', () =>
+      setTab(b.dataset.tab, TAB_ORDER.indexOf(b.dataset.tab) > TAB_ORDER.indexOf(currentTab) ? 1 : -1),
+    ),
   );
