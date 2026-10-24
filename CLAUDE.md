@@ -9,8 +9,16 @@ Rules for any Claude chat working on this repo.
 ## Every change
 - Update `README.md` in the same commit whenever a change adds, removes or changes a feature, a setting, the data layout, the Firestore rule, the files, or the setup steps.
 - Bump the version on every release that changes app files, in both places with the same number: the `v1.0`-style label next to "Home log" in `index.html`, and the cache name `cart-log-X.Y` in `sw.js`. Small fix or tweak: +0.1. Big feature or redesign: next whole number. Tell Pedro the new version number when you push.
-- Test before pushing. UI changes: run the app in mobile-emulated Chromium (touch events) and check the affected flows, including both tabs, swipe, and to-do drag. Logic changes: test against a fake Firestore.
-- No build step: the app is plain static files served by GitHub Pages from `main`.
+- Test before pushing: `npm test` runs the unit tests, the end-to-end tests (emulated Android and iPhone with touch, fake Firestore) and the screenshot comparison; all must pass. Add or update tests with the change: rules go into `js/logic.js` with a unit test in `tests/unit/logic.spec.js`, flows into `tests/e2e/`. Update screenshots only for an intended visual change (`npx playwright test tests/e2e/visual.spec.js --update-snapshots`) and look at them first.
+- Run `npm run format` (Prettier) before committing.
+- No build step: the app is plain static files served by GitHub Pages from `main`. `package.json`, `tests/` and the config files are dev-only; the app never loads them.
+
+## Code layout
+- `index.html` is markup only; styles are in `styles.css`; code is in `js/`, loaded as plain scripts in this order: `ios-manifest.js` (in `<head>`), then `logic.js`, `core.js`, `sync.js`, `groceries.js`, `tabs.js`, `recipes.js`, `todos.js`, `gestures.js`, `settings.js`, `backup.js`, `boot.js`. They share one global scope: code that runs while a file loads may only use names from that file or earlier ones.
+- `js/logic.js` holds the rules as plain functions: no `document`, no `localStorage`, no Firestore, no app state (pass data in). Keep it that way so it stays unit-testable in Node.
+- A new file in `js/` goes into `index.html` (in load order) and into `SHELL` in `sw.js`, or the app breaks offline; `tests/unit/files.spec.js` checks this.
+- The cache-name line in `sw.js` (`const CACHE=PREFIX+'X.Y';`) keeps that exact spacing (it has `prettier-ignore`); "Check for updates" and a test read it.
+- README "How it works" describes the files, data layout, sync and tests; keep it in step.
 
 ## Don'ts
 - Keep personal details (Firebase project sharing, names) out of public files like the README.
@@ -18,10 +26,10 @@ Rules for any Claude chat working on this repo.
 - Private to-do lists live under each phone's own private code (`localStorage` `cart-log.me`): `lists/{me}/{todos|meta}`. Never write private data under the shared list code, and never show the private code anywhere but the ⋯ menu. Home's to-dos have no `list` field; keep it that way so older data still shows.
 
 ## Security rules
-- `index.html` has a Content-Security-Policy. Keep it: if a feature needs another address, add exactly that address to the right directive (`connect-src` for data, `script-src` for scripts) and say so in the README. Never add `*` or broad wildcards.
+- `index.html` has a Content-Security-Policy with no `'unsafe-inline'` for scripts: no inline `<script>` blocks and no `on…=` attributes; put code in `js/` and wire events with `addEventListener`. If a feature needs another address, add exactly that address to the right directive (`connect-src` for data, `script-src` for scripts) and say so in the README. Never add `*` or broad wildcards.
 - Anything that came from Firestore, the catalog or the user goes through `esc()` before it is put into HTML (text and attributes, ids included). Prefer `textContent` where possible.
 - No secrets in this public repo, and no personal data (lists, exports) committed. Export files (`home-log-*.json`) are in `.gitignore`; never commit one.
-- Export/import (`EXP_VERSION`, `SPEC`, `metaSpec` in `index.html`): when a document gets a new field, add it to the spec too, or exports drop it and imports reject it. If the file format changes incompatibly, bump `EXP_VERSION` and keep reading the old version.
+- Export/import (`EXP_VERSION`, `SPEC`, `metaSpec` in `js/logic.js`): when a document gets a new field, add it to the spec too, or exports drop it and imports reject it. If the file format changes incompatibly, bump `EXP_VERSION` and keep reading the old version.
 
 ## Address and storage rules
 

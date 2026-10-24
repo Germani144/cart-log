@@ -23,10 +23,10 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 - The title on the list card ("To do" for Home, the list's name for others) can be renamed by tapping it; clearing it brings back the default. Shared lists sync the title, private ones keep it private.
 - Each list is an ordered list of bulleted to-dos (up to 50 open). Tap **H** next to the input to add the next entry as a **heading** instead (it switches back after one); headings group to-dos into sections, show bigger and bolder than to-dos, and have no tick box. Hold and drag a heading to move its whole section (its to-dos fold under it while dragging and come along); drag a single to-do to reorder it within a section or move it to another. To-dos above the first heading stay on top. Deleting a heading asks first; its to-dos stay in the list. Tap the ▾ arrow on a heading to fold its section (the heading shows how many items are hidden); folding is per phone and remembered, and adding an item to a folded last section unfolds it. The tab badge counts the open to-dos (not headings) of the list you're on.
 - Paste several lines into *Add an item…* to add them all at once: lines starting with `-` (or `•`, `*`) become to-dos, other lines become headings, and a bare `-` is skipped. It asks before adding.
-- Hold and drag to reorder; tick to move an item to Done (struck through, faded).
+- Tick to move an item to Done (struck through, faded).
 
 **Recipes**
-- A shared, alphabetical list of saved dishes under a title you can rename (tap the heading; the name is shared by everyone on the list) (e.g. Lasagne, Chili sin carne). Add one by name; adding a name that's already saved just says so.
+- A shared, alphabetical list of saved dishes (e.g. Lasagne, Chili sin carne) under a title you can rename (tap the heading; the name is shared by everyone on the list). Add one by name; adding a name that's already saved just says so.
 - Tap a dish to open its recipe: name, ingredients, and how many people the amounts are for (default 2). ✕ on the row deletes the dish.
 - Ingredients come from the same item database as the grocery list (same search, æ/ø/å-proof). Pick one and its unit is filled in from the database and fixed; you only type the amount (e.g. 500 g, 1 l, 10 pcs). Typing `500 g mel` when flour is stored in kg gives 0,5 kg.
 - An ingredient that isn't in the database yet gets a unit picker once; on Save it's added to the database under Andet / Other (it doesn't show up as a grocery suggestion until it's been bought).
@@ -50,37 +50,37 @@ Live: https://germani144-home.github.io/cart-log/ (the repo kept its original na
 
 Each release bumps the version in two places, kept identical: the label next to the title in `index.html` and the cache name in `sw.js` (`cart-log-X.Y`). Small fixes and tweaks raise the second number (1.0 → 1.1); bigger features or redesigns raise the first (1.4 → 2.0).
 
-## How it's built
+## How it works
 
-Plain static files, no build step, no framework.
+Plain static files served by GitHub Pages from `main`: no build step, no framework, no runtime dependencies besides the pinned Firebase SDK. Sync is Firebase Cloud Firestore (free Spark plan) with offline persistence.
+
+### Files
 
 | File | What it does |
 |---|---|
-| `index.html` | The whole app: markup, styles and logic |
+| `index.html` | The markup: tabs, panes and dialogs. Loads the files below |
+| `styles.css` | All styles (light and dark) |
+| `js/ios-manifest.js` | Runs first, in `<head>`: links the manifest everywhere except iPhone/iPad (see *Offline and updates*) |
+| `js/logic.js` | The core rules as plain functions with no page, storage or Firestore: æ/ø/å search, amounts and units, recipe scaling, catalog matching and ranking, to-do order, paste parsing, the export format and its checks, import planning. Unit-tested |
+| `js/core.js` | Page helpers (`$`, `esc`), `localStorage` (`load`/`save`), the built-in item database from `seed.js`, and the app's state |
+| `js/sync.js` | Connecting to Firestore and writing documents; the grocery item helpers built on that |
+| `js/groceries.js` | Groceries tab: adding items, suggestions, the item dialog (categories, colours, amounts), the list, the manager |
+| `js/tabs.js` | Switching tabs, and keeping dialogs above the on-screen keyboard |
+| `js/recipes.js` | Recipes tab: dishes, the recipe dialog, adding a dish to the grocery list |
+| `js/todos.js` | To-dos tab: lists (shared and private), headings, folding, editing, hold-and-drag |
+| `js/gestures.js` | Swiping between tabs, and ignoring stray taps right after a drag |
+| `js/settings.js` | Joining, sharing and leaving a list, the ⋯ menu, private-code restore, updates, starter dishes |
+| `js/backup.js` | Export data / Import data (the rules are in `logic.js`) |
+| `js/boot.js` | Startup: picks up `?list=CODE`, draws the app, connects, registers the service worker |
 | `seed.js` | Built-in bilingual item database and categories |
 | `dishes-pack.json` | Starter dishes with recipes, loaded by the *Add starter dishes* button |
 | `firebase-config.js` | Firebase web config for the project |
 | `sw.js` | Service worker: caches the app for offline use (cache name `cart-log-X.Y` matches the app version) |
-| `manifest.json` | Install name, icons and colours; `scope` and `start_url` are `./`, so the installed app covers only `/cart-log/`, not the whole site. Not linked on iPhone/iPad, so Safari's "Add to Home Screen" starts the app at the current address (with the list code); iOS takes name, icon and full-screen mode from the `apple-*` tags instead |
+| `manifest.json` | Install name, icons and colours; `scope` and `start_url` are `./`, so the installed app covers only `/cart-log/`, not the whole site |
 | `icon-*.png` | App icons |
+| `tests/`, `package.json`, `playwright.config.js`, `.prettierrc.json` | Dev-only: tests and formatting. Nothing here is loaded by the app |
 
-Hosting is GitHub Pages from `main`. Sync is Firebase Cloud Firestore (free Spark plan) with offline persistence.
-
-### Offline and updates
-
-Home log has its own address, but it still keeps strictly to its own cache and storage (so it stays clean if it ever shares an address with another app):
-
-- The service worker only handles requests under its own scope (`/cart-log/`) plus the pinned Firebase SDK, and reads only from its own cache.
-- On update it deletes only its own old caches (names starting with `cart-log-`), never other apps'.
-- Files are fetched network-first, bypassing the browser's HTTP cache, so a new deploy shows on the next open; when offline, the cached copy is used.
-- `localStorage` keys are prefixed `cart-log.` (older `cl_` keys are moved over automatically).
-- Firebase runs as a named app (`cart-log`), so Firestore's offline database and its tab-sync `localStorage` keys (`firestore_…/cart-log/…`) are separate from any other app on the origin that uses the same Firebase project.
-
-### Security
-
-- No secrets in the code: the Firebase web config is public by design; the Firestore rules decide who may read or write.
-- Everything synced or typed in is shown as text: it goes through `esc()` before it reaches the page, item ids included.
-- `index.html` sets a Content-Security-Policy: scripts only from this site and the pinned Firebase SDK on gstatic.com, and data may only be sent to this site and Firestore (`firestore.googleapis.com`). Inline scripts are still allowed for now, because the app's code lives inside `index.html`; splitting it into files (planned readability refactor) lets the policy drop that.
+The `js/` files are ordinary scripts, loaded in the order above, so a name defined in one is visible in the later ones. Code that runs while a file loads only uses names from that file or earlier ones; everything else runs later, from events.
 
 ### Data layout
 
@@ -97,6 +97,51 @@ lists/{code}/meta      list settings: "dishes" (title of the dish list), "tl_mai
 lists/{private}/todos  a phone's private to-dos (same shape)
 lists/{private}/meta   its private lists ("tl_<id>")
 ```
+
+Each phone also keeps a copy of everything in `localStorage` (keys `cart-log.<name>`), so the app opens instantly and works offline.
+
+### How sync works
+
+- On start the app shows the copy in `localStorage`, then `connect()` (in `sync.js`) listens to each collection of the list in Firestore. Every snapshot replaces the local copy and redraws.
+- A change is applied to the local copy straight away and written to Firestore. Without signal, Firestore queues the write and sends it later; the dot next to the title shows *live*, *syncing…* (writes still on their way) or *offline*.
+- Firebase runs as a named app (`cart-log`), so its offline database and keys stay separate from other apps on the same address that use the same Firebase project.
+- To-do order: each to-do has an `order` number. A dragged row gets the number halfway between its new neighbours, so only that row changes and two phones reordering at once don't overwrite each other. A dragged heading moves its whole section, spaced evenly between the neighbours. If two neighbours ever get too close, the list is renumbered 1000, 2000, …
+
+### Private to-do lists
+
+The first private list a phone makes gives it a second, random code of its own (`cart-log.me` in `localStorage`). Private lists and their to-dos live under that code (`lists/{private}/…`), which is never written anywhere else: not under the shared code, not in invite links, not in exports. The app listens to it next to the shared list. The ⋯ menu shows the code so the lists can be restored on a new phone; that's the only place it appears.
+
+### Offline and updates
+
+Home log has its own address, but it still keeps strictly to its own cache and storage (so it stays clean if it ever shares an address with another app):
+
+- The service worker precaches the app's files, only handles requests under its own scope (`/cart-log/`) plus the pinned Firebase SDK, and reads only from its own cache.
+- On update it deletes only its own old caches (names starting with `cart-log-`), never other apps'.
+- Files are fetched network-first, bypassing the browser's HTTP cache, so a new deploy shows on the next open; when offline, the cached copy is used.
+- `localStorage` keys are prefixed `cart-log.` (older `cl_` keys are moved over automatically).
+- On iPhone/iPad the manifest isn't linked and the address keeps `?list=CODE`, so Safari's "Add to Home Screen" starts the app at that address. The home-screen app has its own storage, separate from Safari's, and joins the list from the address by itself.
+
+### Security
+
+- No secrets in the code: the Firebase web config is public by design; the Firestore rules decide who may read or write.
+- Everything synced or typed in is shown as text: it goes through `esc()` before it reaches the page, item ids included.
+- `index.html` sets a Content-Security-Policy: scripts only from this site and the pinned Firebase SDK on gstatic.com (no inline scripts), and data may only be sent to this site and Firestore (`firestore.googleapis.com`).
+
+### Tests
+
+Dev-only, with [Playwright](https://playwright.dev) and Node 18+:
+
+```
+npm install
+npx playwright install chromium   # once per machine
+npm test                          # everything (about 2 minutes)
+npm run test:unit                 # only the plain-function tests (seconds)
+npm run format                    # Prettier
+```
+
+- `tests/unit/`: `logic.js` function by function, plus checks that every file the page loads is precached, there are no inline scripts, the version label matches the cache name and the manifest id is unchanged.
+- `tests/e2e/`: the real app in emulated Android (Pixel 7) and iPhone phones with touch, against a fake, shared Firestore (`tests/fake-firestore.js`), so two or three "phones" can sync with each other in a test. Covers groceries, to-dos (including drag, sections, folding, private lists), recipes, export/import, joining, the iPhone home-screen rules, updates and offline start. Every test fails on a page error or a CSP violation.
+- `tests/e2e/visual.spec.js` compares screenshots of the main screens with `tests/e2e/__screenshots__/`. After an intended visual change, update them with `npx playwright test tests/e2e/visual.spec.js --update-snapshots`.
 
 ### Firestore rule
 
@@ -123,7 +168,7 @@ Without a config the app still runs, but the list stays on that one phone ("loca
 ### Export file format
 
 ```
-{ "format": "home-log-export", "version": 1, "exportedAt": "…", "appVersion": "v4.0",
+{ "format": "home-log-export", "version": 1, "exportedAt": "…", "appVersion": "v4.1",
   "shared":  { "items": […], "catalog": […], "cats": […], "todos": […], "dishes": […], "meta": […] },
   "private": { "todos": […], "meta": […] } | null }
 ```
