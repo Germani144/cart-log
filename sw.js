@@ -7,7 +7,26 @@ const CACHE=PREFIX+'4.0'; // keep in step with the version label in index.html
 // caches this app used before the prefix existed; safe to remove, nothing else uses these names
 const LEGACY = /^cart-(v\d+|\d+\.\d+)$/;
 const SCOPE = self.registration.scope; // e.g. https://germani144.github.io/cart-log/
-const SHELL = ['./', 'index.html', 'firebase-config.js', 'seed.js', 'manifest.json', 'icon-192.png'];
+const SHELL = [
+  './',
+  'index.html',
+  'styles.css',
+  'js/ios-manifest.js',
+  'js/core.js',
+  'js/sync.js',
+  'js/groceries.js',
+  'js/tabs.js',
+  'js/recipes.js',
+  'js/todos.js',
+  'js/gestures.js',
+  'js/settings.js',
+  'js/backup.js',
+  'js/boot.js',
+  'firebase-config.js',
+  'seed.js',
+  'manifest.json',
+  'icon-192.png',
+];
 // the pinned Firebase SDK lives on another origin but is needed for offline sync, so it is cached too
 const SDK = /^https:\/\/www\.gstatic\.com\/firebasejs\/10\.12\.2\//;
 
