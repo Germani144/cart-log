@@ -1,0 +1,15 @@
+{
+  "name": "home-log",
+  "private": true,
+  "description": "Home log — dev-only tooling (tests, formatting). Nothing here ships with the app.",
+  "scripts": {
+    "test": "playwright test",
+    "test:unit": "playwright test tests/unit",
+    "format": "prettier --write \"*.{html,css,js,json,md}\" \"js/**/*.js\" \"tests/**/*.js\"",
+    "format:check": "prettier --check \"*.{html,css,js,json,md}\" \"js/**/*.js\" \"tests/**/*.js\""
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.0",
+    "prettier": "3.3.3"
+  }
+}

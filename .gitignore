@@ -1,2 +1,6 @@
 # exported backups: personal data, never commit
 home-log-*.json
+# dev-only tooling
+node_modules/
+test-results/
+playwright-report/
